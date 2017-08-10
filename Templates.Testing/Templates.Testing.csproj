@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{9149FE82-E46D-4A24-AA6B-B463C0F4DBA9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Templates.Testing</RootNamespace>
+    <AssemblyName>Templates.Testing</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Castle.Core, Version=3.3.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
+      <HintPath>..\packages\Castle.Core.3.3.3\lib\net45\Castle.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Moq, Version=4.5.10.0, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
+      <HintPath>..\packages\Moq.4.5.10\lib\net45\Moq.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Repository, Version=2.2.6423.23917, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Repository.2.2.6423.23917\lib\net45\Repository.dll</HintPath>
+    </Reference>
+    <Reference Include="Repository.Framework, Version=2.2.6423.23917, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Repository.2.2.6423.23917\lib\net45\Repository.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Templates, Version=2.1.6423.24029, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Templates.2.1.6423.24029\lib\net45\Templates.dll</HintPath>
+    </Reference>
+    <Reference Include="Templates.Framework, Version=2.0.6423.24029, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Templates.2.1.6423.24029\lib\net45\Templates.Framework.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Admire.cs" />
+    <Compile Include="Associated.cs" />
+    <Compile Include="AdoptedChild.cs" />
+    <Compile Include="BiologicalChild.cs" />
+    <Compile Include="AdoptingParent.cs" />
+    <Compile Include="Grandchild.cs" />
+    <Compile Include="Grandparent.cs" />
+    <Compile Include="SingleParent.cs" />
+    <Compile Include="UnfitParent.cs" />
+    <Compile Include="FosterParent.cs" />
+    <Compile Include="BiologicalParent.cs" />
+    <Compile Include="Child.cs" />
+    <Compile Include="FosterChild.cs" />
+    <Compile Include="Divorce.cs" />
+    <Compile Include="Friend.cs" />
+    <Compile Include="Enemy.cs" />
+    <Compile Include="CustodiedChild.cs" />
+    <Compile Include="OnlyChild.cs" />
+    <Compile Include="Godchild.cs" />
+    <Compile Include="IllegitimateChild.cs" />
+    <Compile Include="Godfather.cs" />
+    <Compile Include="IllegitimateParent.cs" />
+    <Compile Include="Marriage.cs" />
+    <Compile Include="Parent.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Recursive.cs" />
+    <Compile Include="Sibling.cs" />
+    <Compile Include="Relationship.cs" />
+    <Compile Include="Seperated.cs" />
+    <Compile Include="TestingFactory.cs" />
+    <Compile Include="SignificantOther.cs" />
+    <Compile Include="Specification.cs" />
+    <Compile Include="SpecificationEnumeration.cs" />
+    <Compile Include="SpecificationKey.cs" />
+    <Compile Include="SpecificationModel.cs" />
+    <Compile Include="SpecificationProperty.cs" />
+    <Compile Include="SpecificationSettings.cs" />
+    <Compile Include="TestingHelper.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Tools\EnumerationTemplate.tt" />
+    <None Include="Tools\LogTemplate.tt" />
+    <None Include="Tools\ModelInterfaceTemplate.tt" />
+    <None Include="Tools\ModelTemplate.tt" />
+    <None Include="Tools\ModelTestFactoriesTemplate.tt" />
+    <None Include="Tools\ModelUnitTestTemplate.tt" />
+    <None Include="Tools\RepositoryInterfaceTemplate.tt" />
+    <None Include="Tools\RepositoryTemplate.tt" />
+    <None Include="Tools\RepositoryUnitTestTemplate.tt" />
+    <None Include="Tools\ServiceIntegrationTestTemplate.tt" />
+    <None Include="Tools\ServiceInterfaceTemplate.tt" />
+    <None Include="Tools\ServiceTemplate.tt" />
+    <None Include="Tools\ServiceUnitTestTemplate.tt" />
+    <None Include="Tools\Common.tt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="Templates.Testing.nuspec" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Templates.Testing.Framework\Templates.Testing.Framework.csproj">
+      <Project>{b6a73a92-7869-4c86-9b82-8d41d4e9ec36}</Project>
+      <Name>Templates.Testing.Framework</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -1,0 +1,28 @@
+﻿<#@ assembly Name="System.Core" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.Framework.dll" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="Templates" #>
+<#@ import namespace="Templates.Framework" #>
+<#+
+IList<IFile> filesToGenerate = new List<IFile>();
+
+void GenerateFiles(string folderPath, IList<IFile> filesToGenerate)
+{
+	foreach(IFile file in filesToGenerate)
+	{
+		this.GenerationEnvironment.Remove(0, this.GenerationEnvironment.Length);
+		
+		foreach(ILine line in file.ToLines())
+			WriteLine(line.Code);
+
+		File.WriteAllText(Path.Combine(folderPath, file.Name + "." + file.Extension), this.GenerationEnvironment.ToString()); 
+
+		this.GenerationEnvironment.Remove(0, this.GenerationEnvironment.Length);
+	}
+}
+#>
