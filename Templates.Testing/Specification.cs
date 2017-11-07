@@ -125,7 +125,7 @@ namespace Templates.Testing
                     specification.Warnings.Add(new StringBuilder("XML File ").Append(defaultName).Append(" did not start with a 'model' or 'enumeration' element therefore there were no Models established for this file.").ToString());
                 }
             }
-
+            
             List<ISpecificationModel> modelsThatWereSplit = new List<ISpecificationModel>();
             List<ISpecificationModel> tertiaryModels = new List<ISpecificationModel>();
             foreach (ISpecificationModel model in specification.Models.Values.Where(_specificationModel => _specificationModel.Key != null && _specificationModel.Key.SpecificationProperties.Count() == 2))
@@ -145,20 +145,25 @@ namespace Templates.Testing
                         _model.Variable.VariableType.Name == mothersSpecificationProperty.PropertyType ||
                         _model.Interface.VariableType.Name == mothersSpecificationProperty.PropertyType);
 
+                    bool granddaughterExists = grandmotherModel.SpecificationProperties.Values.Any(_specificationProperty => _specificationProperty.PropertyType == model.Interface.VariableType.Name);
+                    bool grandsonExists = grandfatherModel.SpecificationProperties.Values.Any(_specificationProperty => _specificationProperty.PropertyType == model.Interface.VariableType.Name);
+
                     ISpecificationModel granddaughterModel = null;
-                    if (grandmotherModel.SpecificationProperties.Values.Any(_specificationProperty => _specificationProperty.PropertyType == model.Interface.VariableType.Name))
+                    if (granddaughterExists)
                     {
-                        granddaughterModel = Specification.ConveiveSpecificationModel(specification, testingFactory, model, grandmotherModel, grandfatherModel);
-                        
-                        tertiaryModels.Add(granddaughterModel);
+                        granddaughterModel = Specification.ConveiveSpecificationModel(specification, testingFactory, model, grandmotherModel, grandfatherModel, grandsonExists);
+
+                        if (granddaughterModel != null)
+                            tertiaryModels.Add(granddaughterModel);
                     }
 
                     ISpecificationModel grandsonModel = null;
-                    if (grandfatherModel.SpecificationProperties.Values.Any(_specificationProperty => _specificationProperty.PropertyType == model.Interface.VariableType.Name))
+                    if (grandsonExists)
                     {
-                        grandsonModel = Specification.ConveiveSpecificationModel(specification, testingFactory, model, grandfatherModel, grandmotherModel);
-                        
-                        tertiaryModels.Add(grandsonModel);
+                        grandsonModel = Specification.ConveiveSpecificationModel(specification, testingFactory, model, grandfatherModel, grandmotherModel, granddaughterExists);
+
+                        if (grandsonModel != null)
+                            tertiaryModels.Add(grandsonModel);
                     }
 
                     if (granddaughterModel != null && grandsonModel != null)
@@ -172,8 +177,9 @@ namespace Templates.Testing
                         foreach (ISpecificationProperty specificationProperty in grandmotherModel.SpecificationProperties.Values.Where(_specificationProperty => _specificationProperty.PropertyType == model.Interface.VariableType.Name))
                             specificationProperty.PropertyType = granddaughterModel.Interface.VariableType.Name;
 
-                        foreach (ISpecificationProperty specificationProperty in grandsonModel.SpecificationProperties.Values.Where(_specificationProperty => _specificationProperty.PropertyType == model.Interface.VariableType.Name))
-                            specificationProperty.PropertyType = granddaughterModel.Interface.VariableType.Name;
+                        if (grandsonModel != null)
+                            foreach (ISpecificationProperty specificationProperty in grandsonModel.SpecificationProperties.Values.Where(_specificationProperty => _specificationProperty.PropertyType == model.Interface.VariableType.Name))
+                                specificationProperty.PropertyType = granddaughterModel.Interface.VariableType.Name;
                     }
 
                     if (grandsonModel != null && model.Interface.VariableType.Name != grandsonModel.Interface.VariableType.Name)
@@ -181,8 +187,9 @@ namespace Templates.Testing
                         foreach (ISpecificationProperty specificationProperty in grandfatherModel.SpecificationProperties.Values.Where(_specificationProperty => _specificationProperty.PropertyType == model.Interface.VariableType.Name))
                             specificationProperty.PropertyType = grandsonModel.Interface.VariableType.Name;
 
-                        foreach (ISpecificationProperty specificationProperty in granddaughterModel.SpecificationProperties.Values.Where(_specificationProperty => _specificationProperty.PropertyType == model.Interface.VariableType.Name))
-                            specificationProperty.PropertyType = grandsonModel.Interface.VariableType.Name;
+                        if (granddaughterModel != null)
+                            foreach (ISpecificationProperty specificationProperty in granddaughterModel.SpecificationProperties.Values.Where(_specificationProperty => _specificationProperty.PropertyType == model.Interface.VariableType.Name))
+                                specificationProperty.PropertyType = grandsonModel.Interface.VariableType.Name;
                     }
                 }
             }
@@ -201,8 +208,12 @@ namespace Templates.Testing
                     specificationProperties = specificationProperties.Concat(model.Key.SpecificationProperties);
 
                 foreach (ISpecificationProperty specificationProperty in specificationProperties)
-                    if (specification.Models.ContainsKey(specificationProperty.PropertyType))
+                {
+                    if (specification.Enumerations.ContainsKey(specificationProperty.PropertyType))
+                        specificationProperty.IsEnumeration = true;
+                    else if (specification.Models.ContainsKey(specificationProperty.PropertyType))
                         model.SetupRelationship(specification.Models[specificationProperty.PropertyType]);
+                }
             }
 
             foreach (ISpecificationModel model in specification.Models.Values)
@@ -244,9 +255,8 @@ namespace Templates.Testing
             {
                 foreach (XmlNode xmlNode in modelElement.ChildNodes)
                 {
-                    if (xmlNode is XmlElement)
+                    if (xmlNode is XmlElement xmlElement)
                     {
-                        XmlElement xmlElement = (XmlElement)xmlNode;
                         switch (xmlElement.Name)
                         {
                             case "items":
@@ -314,6 +324,9 @@ namespace Templates.Testing
                         model.CanDelete = canDeleteAttribute == null || canDeleteAttribute.Value.Trim().ToLower() != "false" ? true : false;
                         model.CanInsert = canInsertAttribute == null || canInsertAttribute.Value.Trim().ToLower() != "false" ? true : false;
                         model.CanUpdate = canUpdateAttribute == null || canUpdateAttribute.Value.Trim().ToLower() != "false" ? true : false;
+
+                        if (!model.CanDelete && !model.CanInsert && !model.CanUpdate)
+                            model.ReadOnly = true;
                     }
 
                     if (isPrimaryModelAttribute != null && isPrimaryModelAttribute.Value.Trim().ToLower() == "false")
@@ -321,9 +334,8 @@ namespace Templates.Testing
 
                     foreach (XmlNode xmlNode in modelElement.ChildNodes)
                     {
-                        if (xmlNode is XmlElement)
+                        if (xmlNode is XmlElement xmlElement)
                         {
-                            XmlElement xmlElement = (XmlElement)xmlNode;
                             switch (xmlElement.Name)
                             {
                                 case "key":
@@ -369,9 +381,8 @@ namespace Templates.Testing
 
             foreach (XmlNode xmlNode in keyElement.ChildNodes)
             {
-                if (xmlNode is XmlElement)
+                if (xmlNode is XmlElement xmlElement)
                 {
-                    XmlElement xmlElement = (XmlElement)xmlNode;
                     switch (xmlElement.Name)
                     {
                         case "specificationProperties":
@@ -406,7 +417,7 @@ namespace Templates.Testing
             if (nameAttribute != null && !string.IsNullOrWhiteSpace(nameAttribute.Value))
             {
                 string name = nameAttribute.Value.Trim();
-                string value = valueAttribute == null ? null : valueAttribute.Value.Trim();
+                string value = valueAttribute?.Value.Trim();
 
                 specificationEnumerationItem = new SpecificationEnumerationItem(name, value);
             }
@@ -420,9 +431,8 @@ namespace Templates.Testing
 
             foreach (XmlNode xmlNode in specificationEnumerationItemsElement.ChildNodes)
             {
-                if (xmlNode is XmlElement)
+                if (xmlNode is XmlElement xmlElement)
                 {
-                    XmlElement xmlElement = (XmlElement)xmlNode;
                     switch (xmlElement.Name)
                     {
                         case "item":
@@ -445,9 +455,8 @@ namespace Templates.Testing
 
             foreach (XmlNode xmlNode in specificationPropertiesElement.ChildNodes)
             {
-                if (xmlNode is XmlElement)
+                if (xmlNode is XmlElement xmlElement)
                 {
-                    XmlElement xmlElement = (XmlElement)xmlNode;
                     switch (xmlElement.Name)
                     {
                         case "specificationProperty":
@@ -487,6 +496,7 @@ namespace Templates.Testing
         {
             ISpecificationProperty specificationProperty = null;
 
+            XmlAttribute defaultAttribute = specificationPropertyElement.Attributes["default"];
             XmlAttribute isCalculatedAttribute = specificationPropertyElement.Attributes["isCalculated"];
             XmlAttribute isDateOnlyAttribute = specificationPropertyElement.Attributes["isDateOnly"];
             XmlAttribute nameAttribute = specificationPropertyElement.Attributes["name"];
@@ -518,8 +528,7 @@ namespace Templates.Testing
 
                 if (mantissaSizeAttribute != null && mantissaSizeAttribute.Value.Trim().Length > 0)
                 {
-                    int temp = 0;
-                    if (!Int32.TryParse(mantissaSizeAttribute.Value, out temp))
+                    if (!Int32.TryParse(mantissaSizeAttribute.Value, out int temp))
                         specification.Errors.Add(new StringBuilder().Append(model.Variable.VariableType.Name).Append(" identified a Specifcation Property with a 'mantissaSize' that was not a number, and therefore is being ignored.").ToString());
                     else
                         mantissaSize = temp;
@@ -533,6 +542,43 @@ namespace Templates.Testing
                 specificationProperty.MantissaSize = mantissaSize;
                 specificationProperty.ReadOnly = readOnly;
 
+                if (defaultAttribute != null)
+                {
+                    if (string.IsNullOrWhiteSpace(defaultAttribute.Value))
+                    {
+                        specification.Errors.Add(new StringBuilder().Append(model.Variable.VariableType.Name).Append(".").Append(specificationProperty.Name).Append(" identified a 'default' value but it was not set, therefore it is being skipped.").ToString());
+                    }
+                    else if (specificationProperty.PropertyType.StartsWith("bool"))
+                    {
+                        if (bool.TryParse(defaultAttribute.Value, out bool temp))
+                            specificationProperty.Default = temp;
+                        else
+                            specification.Errors.Add(new StringBuilder().Append(model.Variable.VariableType.Name).Append(".").Append(specificationProperty.Name).Append(" has a 'default' value '" + defaultAttribute.Value + "', but it can't be converted into a Boolean.").ToString());
+                    }
+                    else if (specificationProperty.PropertyType.StartsWith("DateTime"))
+                    {
+                        if (DateTime.TryParse(defaultAttribute.Value, out DateTime temp))
+                            specificationProperty.Default = temp;
+                        else
+                            specification.Errors.Add(new StringBuilder().Append(model.Variable.VariableType.Name).Append(".").Append(specificationProperty.Name).Append(" has a 'default' value '" + defaultAttribute.Value + "', but it can't be converted into a DateTime.").ToString());
+                    }
+                    else if (specificationProperty.PropertyType.StartsWith("double"))
+                    {
+                        if (double.TryParse(defaultAttribute.Value, out double temp))
+                            specificationProperty.Default = temp;
+                        else
+                            specification.Errors.Add(new StringBuilder().Append(model.Variable.VariableType.Name).Append(".").Append(specificationProperty.Name).Append(" has a 'default' value '" + defaultAttribute.Value + "', but it can't be converted into a Double.").ToString());
+                    }
+                    else if (specificationProperty.PropertyType.StartsWith("string"))
+                    {
+                        specificationProperty.Default = defaultAttribute.Value;
+                    }
+                    else
+                    {
+                        specification.Errors.Add(new StringBuilder().Append(model.Variable.VariableType.Name).Append(".").Append(specificationProperty.Name).Append(" has a 'default' value, but the type " + specificationProperty.PropertyType + " is not currently supported.").ToString());
+                    }
+                }
+
                 XmlAttribute isListAttribute = specificationPropertyElement.Attributes["isList"];
                 if (isListAttribute != null && isListAttribute.Value.Trim().ToLower() != "false")
                     specificationProperty.IsList = true;
@@ -544,6 +590,8 @@ namespace Templates.Testing
                         specification.Errors.Add(new StringBuilder().Append(model.Variable.VariableType.Name).Append(".").Append(specificationProperty.Name).Append(" identified a 'maximum' attribute but it was not set, therefore it is being skipped.").ToString());
                     else if (specificationProperty.PropertyType.StartsWith("DateTime"))
                         specificationProperty.Maximum = Convert.ToDateTime(maximumAttribute.Value);
+                    else if (specificationProperty.PropertyType.StartsWith("double"))
+                        specificationProperty.Maximum = Convert.ToDouble(maximumAttribute.Value);
                     else
                         specificationProperty.Maximum = Convert.ToInt32(maximumAttribute.Value);
                 }
@@ -564,6 +612,8 @@ namespace Templates.Testing
                         specification.Errors.Add(new StringBuilder().Append(model.Variable.VariableType.Name).Append(".").Append(specificationProperty.Name).Append(" identified a 'minimum' attribute but it was not set, therefore it is being skipped.").ToString());
                     else if (specificationProperty.PropertyType.StartsWith("DateTime"))
                         specificationProperty.Minimum = Convert.ToDateTime(minimumAttribute.Value);
+                    else if (specificationProperty.PropertyType.StartsWith("double"))
+                        specificationProperty.Minimum = Convert.ToDouble(minimumAttribute.Value);
                     else
                         specificationProperty.Minimum = Convert.ToInt32(minimumAttribute.Value);
                 }
@@ -588,9 +638,8 @@ namespace Templates.Testing
 
             foreach (XmlNode xmlNode in specificationSolutionElement.ChildNodes)
             {
-                if (xmlNode is XmlElement)
+                if (xmlNode is XmlElement xmlElement)
                 {
-                    XmlElement xmlElement = (XmlElement)xmlNode;
                     switch (xmlElement.Name)
                     {
                         case "frameworkProject":
@@ -653,9 +702,8 @@ namespace Templates.Testing
 
             foreach (XmlNode xmlNode in specificationSettingsElement.ChildNodes)
             {
-                if (xmlNode is XmlElement)
+                if (xmlNode is XmlElement xmlElement)
                 {
-                    XmlElement xmlElement = (XmlElement)xmlNode;
                     switch (xmlElement.Name)
                     {
                         case "solution":
@@ -672,9 +720,11 @@ namespace Templates.Testing
             return settings;
         }
 
-        private static ISpecificationModel ConveiveSpecificationModel(ISpecification specification, ITestingFactory testingFactory, ISpecificationModel model, ISpecificationModel relatedModel, ISpecificationModel spouse)
+        private static ISpecificationModel ConveiveSpecificationModel(ISpecification specification, ITestingFactory testingFactory, ISpecificationModel model, ISpecificationModel relatedModel, ISpecificationModel spouse, bool siblingExists)
         {
-            ISpecificationModel morphedModel = testingFactory.GenerateModel(specification, testingFactory, relatedModel.Variable.VariableType.Name + spouse.Variable.VariableType.Name);
+            string morphedName = siblingExists ? relatedModel.Variable.VariableType.Name + model.Variable.VariableType.Name : model.Variable.VariableType.Name;
+
+            ISpecificationModel morphedModel = testingFactory.GenerateModel(specification, testingFactory, morphedName);
             morphedModel.HasRepositoryAndService = model.HasRepositoryAndService;
 
             morphedModel.Key = testingFactory.GenerateKey(morphedModel);
@@ -694,7 +744,7 @@ namespace Templates.Testing
 
                 morphedModel.Key.SpecificationProperties.Add(newSpecificationProperty);
             }
-            
+
             foreach (ISpecificationProperty specificationProperty in model.SpecificationProperties.Values.Concat(spouse.SpecificationProperties.Values))
             {
                 ISpecificationProperty newSpecificationProperty = testingFactory.GenerateProperty(morphedModel, specificationProperty.Name, specificationProperty.PropertyType, specificationProperty.Required);
@@ -715,7 +765,7 @@ namespace Templates.Testing
             }
 
             morphedModel.Tier = Tier.Tertiary;
-
+            
             return morphedModel;
         }
     }

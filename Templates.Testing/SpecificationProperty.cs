@@ -6,11 +6,14 @@ namespace Templates.Testing
 {
     public class SpecificationProperty : ISpecificationProperty
     {
+        protected object _default;
         protected string instanceName;
         protected bool isCalculated;
         protected bool isDateOnly;
+        protected bool isEnumeration;
         protected bool isList;
         protected bool isKey;
+        protected bool? isNullable;
         protected string listInstanceName;
         protected int? mantissaSize;
         protected object maximum;
@@ -22,10 +25,12 @@ namespace Templates.Testing
         protected IRelationship relationship;
         protected bool required;
 
+        public object Default { get { return this._default; } set { this._default = value; } }
         public string EnumerableOf { get { return "IEnumerable<" + this.propertyType + ">"; } }
         public string InstanceName { get { return this.instanceName; } }
         public bool IsCalculated { get { return this.isCalculated; } set { this.isCalculated = value; } }
         public bool IsDateOnly { get { return this.isDateOnly; } set { this.isDateOnly = value; } }
+        public bool IsEnumeration { get { return this.isEnumeration; } set { this.isEnumeration = value; } }
         public bool IsList { get { return this.isList; } set { this.isList = value; Validate(); } }
         public virtual bool IsKey { get { return this.isKey; } set { this.isKey = value; } }
         public string ListOf { get { return "IList<" + this.propertyType + ">"; } }
@@ -41,14 +46,32 @@ namespace Templates.Testing
         public IRelationship Relationship { get { return this.relationship; } set { this.relationship = value; } }
         public bool Required { get { return this.required; } }
 
+        public virtual bool IsNullable
+        {
+            get
+            {
+                if (!this.isNullable.HasValue)
+                {
+                    this.isNullable = Relationship != null 
+                        || propertyType == "string" 
+                        || propertyType.EndsWith("?");
+                }
+
+                return this.isNullable.Value;
+            }
+        }
+
         public SpecificationProperty(ISpecificationModel model, string name, string propertyType, bool required)
         {
             this.model = model;
             this.name = name;
             this.propertyType = propertyType;
             this.required = required;
-
+            
             string common = this.name.Substring(1, this.name.Length - 1);
+
+            this._default = null;
+            this.isEnumeration = false;
             this.instanceName = this.name.Length <= 2 ? this.name.ToLower() : this.name.Substring(0, 1).ToLower() + common;
             this.name = this.name.Substring(0, 1).ToUpper() + common;
 

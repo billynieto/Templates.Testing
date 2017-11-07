@@ -4,8 +4,8 @@
 <#@ import namespace="System.Diagnostics" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.IO" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.dll" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.Framework.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.Framework.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.Framework.dll" #>
 <#@ import namespace="Templates" #>
@@ -48,6 +48,10 @@ IFile GenerateRepositoryInterfaceFile(ISpecification specification, ISpecificati
 {
 	IFile file = new TemplateFile(specification.Settings.FrameworkRepositoriesNamespace, model.RepositoryInterface.VariableType.Name, "cs");
 	
+	file.Uses(TestingHelper.RepositoryFrameworkNamespace);
+	file.NewUsingStatementBlock();
+	file.Uses(specification.Settings.FrameworkModelsNamespace);
+
 	file.Components.Enqueue(GenerateRepositoryInterface(specification, file.Namespace, model));
 
 	return file;

@@ -4,8 +4,8 @@
 <#@ import namespace="System.Diagnostics" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.IO" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.dll" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.Framework.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.Framework.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.Framework.dll" #>
 <#@ import namespace="Templates" #>
@@ -440,6 +440,15 @@ IFunction Validate_Test_Is_Valid_Function(ISpecification specification, ISpecifi
 
 IFunction Validate_Test_Maximum_Function(ISpecification specification, ISpecificationModel model, ISpecificationProperty specificationProperty)
 {
+	string prefix = "actual." + specificationProperty.Name + " = ";
+	string randomValue = GetMaxValue(specificationProperty);
+
+	if(string.IsNullOrWhiteSpace(randomValue))
+	{
+		randomValue = "TODO";
+		prefix = "//" + prefix;
+	}
+
 	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Validate_" + model.Variable.VariableType.Name + "_Test_" + specificationProperty.Name + "_Maximum");
 	function.Tag("[TestMethod]");
 	
@@ -451,27 +460,11 @@ IFunction Validate_Test_Maximum_Function(ISpecification specification, ISpecific
 			function.Add("actual." + otherSpecificationProperty.Name + " = this." + otherSpecificationProperty.Relationship.RelatedModel.Interface.InstanceName + ".Object;");
 
 	function.Add();
-	
-	if(specificationProperty.PropertyType == "DateTime" || specificationProperty.PropertyType == "DateTime?")		
-		function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatDateTime(specificationProperty.Maximum == null ? DateTime.MaxValue : ((DateTime)specificationProperty.Maximum)) + ";");
-	else if(specificationProperty.PropertyType == "double" || specificationProperty.PropertyType == "double?")
-		function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatDouble(specificationProperty.Maximum == null ? double.MaxValue : (double)specificationProperty.Maximum) + ";");
-	else if(specificationProperty.PropertyType == "int" || specificationProperty.PropertyType == "int?")
-		function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatInt(specificationProperty.Maximum == null ? int.MaxValue : (int)specificationProperty.Maximum) + ";");
-	else if(specificationProperty.PropertyType == "string")
-	{
-		string prefix = "actual." + specificationProperty.Name + " = ";
-		string randomString = TemplatesHelper.RandomStringMaxedOut((int)specificationProperty.Maximum);
-		string counter = TemplatesHelper.ColumnCounter(prefix, randomString);
-			
-		function.Add(counter);
-		function.Add(prefix + TemplatesHelper.FormatString(randomString) + ";");
-	}
-	else
-	{
-		function.Add("//actual." + specificationProperty.Name + " = TODO;");
-	}
 
+	if(specificationProperty.PropertyType == "string")
+		function.Add(TemplatesHelper.ColumnCounter(prefix + " ", randomValue));
+
+	function.Add(prefix + randomValue + ";");
 	function.Add();
 	function.Add("//Act");
 	function.Add("actual.Validate();");
@@ -483,6 +476,15 @@ IFunction Validate_Test_Maximum_Function(ISpecification specification, ISpecific
 
 IFunction Validate_Test_Maximum_Plus_One_Function(ISpecification specification, ISpecificationModel model, ISpecificationProperty specificationProperty)
 {
+	string prefix = "actual." + specificationProperty.Name + " = ";
+	string randomValue = GetMaxValuePlusOne(specificationProperty);
+
+	if(string.IsNullOrWhiteSpace(randomValue))
+	{
+		randomValue = "TODO";
+		prefix = "//" + prefix;
+	}
+
 	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Validate_" + model.Variable.VariableType.Name + "_Test_" + specificationProperty.Name + "_Maximum_Plus_One");
 	function.Tag("[TestMethod]");
 	function.Tag("[ExpectedException(typeof(ArgumentException))]");
@@ -493,29 +495,13 @@ IFunction Validate_Test_Maximum_Plus_One_Function(ISpecification specification, 
 	foreach(ISpecificationProperty otherSpecificationProperty in model.SpecificationProperties.Values)
 		if(otherSpecificationProperty.Name != specificationProperty.Name && otherSpecificationProperty.Relationship != null && otherSpecificationProperty.Required)
 			function.Add("actual." + otherSpecificationProperty.Name + " = this." + otherSpecificationProperty.Relationship.RelatedModel.Interface.InstanceName + ".Object;");
-
+			
 	function.Add();
 
-	if(specificationProperty.PropertyType == "DateTime" || specificationProperty.PropertyType == "DateTime?")		
-		function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatDateTime(((DateTime)specificationProperty.Maximum).AddSeconds(1)) + ";");
-	else if(specificationProperty.PropertyType == "double" || specificationProperty.PropertyType == "double?")
-		function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatDouble((double)specificationProperty.Maximum + .001) + ";");
-	else if(specificationProperty.PropertyType == "int" || specificationProperty.PropertyType == "int?")
-		function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatInt((int)specificationProperty.Maximum + 1) + ";");
-	else if(specificationProperty.PropertyType == "string")
-	{
-		string prefix = "actual." + specificationProperty.Name + " = ";
-		string randomString = TemplatesHelper.RandomStringMaxedOut((int)specificationProperty.Maximum + 1);
-		string counter = TemplatesHelper.ColumnCounter(prefix, randomString);
-			
-		function.Add(counter);
-		function.Add(prefix + TemplatesHelper.FormatString(randomString) + ";");
-	}
-	else
-	{
-		function.Add("//actual." + specificationProperty.Name + " = TODO;");
-	}
+	if(specificationProperty.PropertyType == "string")
+		function.Add(TemplatesHelper.ColumnCounter(prefix + " ", randomValue));
 
+	function.Add(prefix + randomValue + ";");
 	function.Add();
 	function.Add("//Act");
 	function.Add("actual.Validate();");
@@ -527,6 +513,15 @@ IFunction Validate_Test_Maximum_Plus_One_Function(ISpecification specification, 
 
 IFunction Validate_Test_Maximum_With_WhiteSpace_Function(ISpecification specification, ISpecificationModel model, ISpecificationProperty specificationProperty)
 {
+	string prefix = "actual." + specificationProperty.Name + " = ";
+	string randomValue = GetMaxValueWithWhiteSpace(specificationProperty);
+
+	if(string.IsNullOrWhiteSpace(randomValue))
+	{
+		randomValue = "TODO";
+		prefix = "//" + prefix;
+	}
+
 	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Validate_" + model.Variable.VariableType.Name + "_Test_" + specificationProperty.Name + "_Maximum_With_WhiteSpace");
 	function.Tag("[TestMethod]");
 	
@@ -536,19 +531,13 @@ IFunction Validate_Test_Maximum_With_WhiteSpace_Function(ISpecification specific
 	foreach(ISpecificationProperty otherSpecificationProperty in model.SpecificationProperties.Values)
 		if(otherSpecificationProperty.Name != specificationProperty.Name && otherSpecificationProperty.Relationship != null && otherSpecificationProperty.Required)
 			function.Add("actual." + otherSpecificationProperty.Name + " = this." + otherSpecificationProperty.Relationship.RelatedModel.Interface.InstanceName + ".Object;");
-
+			
 	function.Add();
 
-	string prefix = "actual." + specificationProperty.Name + " = ";
+	if(specificationProperty.PropertyType == "string")
+		function.Add(TemplatesHelper.ColumnCounter(prefix + " " + TemplatesHelper.WhiteSpace, randomValue));
 
-	string prefixWithWhiteSpace = prefix + TemplatesHelper.FormatString(TemplatesHelper.WhiteSpace);
-	prefixWithWhiteSpace = prefixWithWhiteSpace.Substring(0, prefixWithWhiteSpace.Length - 1);
-
-	string randomString = TemplatesHelper.RandomStringMaxedOut((int)specificationProperty.Maximum);
-	string counter = TemplatesHelper.ColumnCounter(prefixWithWhiteSpace, randomString);
-			
-	function.Add(counter);
-	function.Add(prefix + TemplatesHelper.FormatString(TemplatesHelper.WhiteSpace + randomString + TemplatesHelper.WhiteSpace) + ";");
+	function.Add(prefix + randomValue + ";");
 	function.Add();
 	function.Add("//Act");
 	function.Add("actual.Validate();");
@@ -560,6 +549,15 @@ IFunction Validate_Test_Maximum_With_WhiteSpace_Function(ISpecification specific
 
 IFunction Validate_Test_Minimum_Function(ISpecification specification, ISpecificationModel model, ISpecificationProperty specificationProperty)
 {
+	string prefix = "actual." + specificationProperty.Name + " = ";
+	string randomValue = GetMinValue(specificationProperty);
+
+	if(string.IsNullOrWhiteSpace(randomValue))
+	{
+		randomValue = "TODO";
+		prefix = "//" + prefix;
+	}
+
 	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Validate_" + model.Variable.VariableType.Name + "_Test_" + specificationProperty.Name + "_Minimum");
 	function.Tag("[TestMethod]");
 	
@@ -569,36 +567,13 @@ IFunction Validate_Test_Minimum_Function(ISpecification specification, ISpecific
 	foreach(ISpecificationProperty otherSpecificationProperty in model.SpecificationProperties.Values)
 		if(otherSpecificationProperty.Name != specificationProperty.Name && otherSpecificationProperty.Relationship != null && otherSpecificationProperty.Required)
 			function.Add("actual." + otherSpecificationProperty.Name + " = this." + otherSpecificationProperty.Relationship.RelatedModel.Interface.InstanceName + ".Object;");
-
-	function.Add();
-	
-	if(specificationProperty.PropertyType == "DateTime" || specificationProperty.PropertyType == "DateTime?")		
-		function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatDateTime(specificationProperty.Minimum == null ? DateTime.MinValue : ((DateTime)specificationProperty.Minimum)) + ";");
-	else if(specificationProperty.PropertyType == "double" || specificationProperty.PropertyType == "double?")
-		function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatDouble(specificationProperty.Minimum == null ? double.MinValue : (double)specificationProperty.Minimum) + ";");
-	else if(specificationProperty.PropertyType == "int" || specificationProperty.PropertyType == "int?")
-		function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatInt(specificationProperty.Minimum == null ? int.MinValue : (int)specificationProperty.Minimum) + ";");
-	else if(specificationProperty.PropertyType == "string")
-	{
-		if(specificationProperty.Minimum != null)
-		{
-			string prefix = "actual." + specificationProperty.Name + " = ";
-			string randomString = TemplatesHelper.RandomStringMaxedOut((int)specificationProperty.Minimum);
-			string counter = TemplatesHelper.ColumnCounter(prefix, randomString);
 			
-			function.Add(counter);
-			function.Add(prefix + TemplatesHelper.FormatString(randomString) + ";");
-		}
-		else
-		{
-			function.Add("actual." + specificationProperty.Name + " = string.Empty;");
-		}
-	}
-	else
-	{
-		function.Add("//actual." + specificationProperty.Name + " = TODO;");
-	}
+	function.Add();
 
+	if(specificationProperty.PropertyType == "string" && randomValue != "string.Empty")
+		function.Add(TemplatesHelper.ColumnCounter(prefix + " ", randomValue));
+
+	function.Add(prefix + randomValue + ";");
 	function.Add();
 	function.Add("//Act");
 	function.Add("actual.Validate();");
@@ -610,6 +585,15 @@ IFunction Validate_Test_Minimum_Function(ISpecification specification, ISpecific
 
 IFunction Validate_Test_Minimum_Minus_One_Function(ISpecification specification, ISpecificationModel model, ISpecificationProperty specificationProperty)
 {
+	string prefix = "actual." + specificationProperty.Name + " = ";
+	string randomValue = GetMinValueMinusOne(specificationProperty);
+
+	if(string.IsNullOrWhiteSpace(randomValue))
+	{
+		randomValue = "TODO";
+		prefix = "//" + prefix;
+	}
+
 	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Validate_" + model.Variable.VariableType.Name + "_Test_" + specificationProperty.Name + "_Minimum_Minus_One");
 	function.Tag("[TestMethod]");
 	function.Tag("[ExpectedException(typeof(ArgumentException))]");
@@ -620,29 +604,13 @@ IFunction Validate_Test_Minimum_Minus_One_Function(ISpecification specification,
 	foreach(ISpecificationProperty otherSpecificationProperty in model.SpecificationProperties.Values)
 		if(otherSpecificationProperty.Name != specificationProperty.Name && otherSpecificationProperty.Relationship != null && otherSpecificationProperty.Required)
 			function.Add("actual." + otherSpecificationProperty.Name + " = this." + otherSpecificationProperty.Relationship.RelatedModel.Interface.InstanceName + ".Object;");
-
+			
 	function.Add();
 	
-	if(specificationProperty.PropertyType == "DateTime" || specificationProperty.PropertyType == "DateTime?")		
-		function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatDateTime(((DateTime)specificationProperty.Minimum).AddSeconds(-1)) + ";");
-	else if(specificationProperty.PropertyType == "double" || specificationProperty.PropertyType == "double?")
-		function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatDouble((double)specificationProperty.Minimum - .001) + ";");
-	else if(specificationProperty.PropertyType == "int" || specificationProperty.PropertyType == "int?")
-		function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatInt((int)specificationProperty.Minimum - 1) + ";");
-	else if(specificationProperty.PropertyType == "string")
-	{
-		string prefix = "actual." + specificationProperty.Name + " = ";
-		string randomString = TemplatesHelper.RandomStringMaxedOut((int)specificationProperty.Minimum - 1);
-		string counter = TemplatesHelper.ColumnCounter(prefix, randomString);
-			
-		function.Add(counter);
-		function.Add(prefix + TemplatesHelper.FormatString(randomString) + ";");
-	}
-	else
-	{
-		function.Add("//actual." + specificationProperty.Name + " = TODO;");
-	}
+	if(specificationProperty.PropertyType == "string" && randomValue != "string.Empty")
+		function.Add(TemplatesHelper.ColumnCounter(prefix + " ", randomValue));
 
+	function.Add(prefix + randomValue + ";");
 	function.Add();
 	function.Add("//Act");
 	function.Add("actual.Validate();");
@@ -689,7 +657,7 @@ IFunction Validate_Test_WhiteSpace_Only_Function(ISpecification specification, I
 	foreach(ISpecificationProperty otherSpecificationProperty in model.SpecificationProperties.Values)
 		if(otherSpecificationProperty.Name != specificationProperty.Name && otherSpecificationProperty.Relationship != null && otherSpecificationProperty.Required)
 			function.Add("actual." + otherSpecificationProperty.Name + " = this." + otherSpecificationProperty.Relationship.RelatedModel.Interface.InstanceName + ".Object;");
-	
+
 	function.Add();
 	function.Add("actual." + specificationProperty.Name + " = " + TemplatesHelper.FormatString(TemplatesHelper.WhiteSpace) + ";");
 	function.Add();

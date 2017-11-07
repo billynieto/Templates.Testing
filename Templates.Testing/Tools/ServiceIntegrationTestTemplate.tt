@@ -4,8 +4,8 @@
 <#@ import namespace="System.Diagnostics" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.IO" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.dll" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.Framework.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.Framework.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.Framework.dll" #>
 <#@ import namespace="Templates" #>
@@ -247,8 +247,22 @@ IClass GenerateCoreServiceTestClass(ISpecification specification, INamespace _na
 						}
 						else
 						{
-							_class.Add(Save_Multiple_Test_Preserves_Property_When_Model_Already_Exist_Function(model, specificationProperty));
-							_class.Add(Save_Test_Preserves_Property_When_Model_Already_Exists_Function(model, specificationProperty));
+							if(specificationProperty.PropertyType == "bool" && specificationProperty.PropertyType == "bool?")
+							{
+								_class.Add(Save_Multiple_Test_Preserves_Property_When_Is_Flipped_And_Model_Already_Exist_Function(model, specificationProperty));
+								_class.Add(Save_Test_Preserves_Property_When_Is_Flipped_And_Model_Already_Exists_Function(model, specificationProperty));
+							}
+							else
+							{
+								_class.Add(Save_Multiple_Test_Preserves_Property_When_Is_Maxed_And_Model_Already_Exist_Function(model, specificationProperty));
+								_class.Add(Save_Test_Preserves_Property_When_Is_Maxed_And_Model_Already_Exists_Function(model, specificationProperty));
+							}
+
+							if(specificationProperty.IsNullable && !specificationProperty.Required)
+							{
+								_class.Add(Save_Multiple_Test_Preserves_Property_When_Is_Null_And_Model_Already_Exist_Function(model, specificationProperty));
+								_class.Add(Save_Test_Preserves_Property_When_Is_Null_And_Model_Already_Exists_Function(model, specificationProperty));
+							}
 						}
 					}
 				}
@@ -756,13 +770,13 @@ IFunction Save_Multiple_Test_Preserve_Models_When_They_Are_New_Function(ISpecifi
 		function.Add("{");
 
 		if(model.Tier == Tier.Primary)
-			function.Add("\t" + model.Interface.VariableType.Name + " actual = this.service.FindSingle(search);");
+			function.Add("\t" + model.Interface.VariableType.Name + " actual = this." + model.Interface.InstanceName + "NotFound = this.service.FindSingle(search);");
 		else
-			function.Add("\t" + model.Interface.VariableType.Name + " actual = this.service.Find(search).FirstOrDefault();");
+			function.Add("\t" + model.Interface.VariableType.Name + " actual = this." + model.Interface.InstanceName + "NotFound = this.service.Find(search).FirstOrDefault();");
 			
 		function.Add();
 		function.Add("\tAssert.IsNotNull(actual);");
-		function.Add("\tAssert.IsTrue(expected.Key.Equals(actual.Key));");
+		//function.Add("\tAssert.IsTrue(expected.Key.Equals(actual.Key));");
 	
 		foreach(ISpecificationProperty specificationProperty in model.SpecificationProperties.Values.Where(_property => !_property.IsCalculated))
 		{
@@ -781,9 +795,9 @@ IFunction Save_Multiple_Test_Preserve_Models_When_They_Are_New_Function(ISpecifi
 	return function;
 }
 
-IFunction Save_Multiple_Test_Preserves_Property_When_Model_Already_Exist_Function(ISpecificationModel model, ISpecificationProperty specificationProperty)
+IFunction Save_Multiple_Test_Preserves_Property_When_Is_Flipped_And_Model_Already_Exist_Function(ISpecificationModel model, ISpecificationProperty specificationProperty)
 {
-	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Save_Multiple_" + model.Variable.ListInstanceNameReference + "_Test_Preserves_" + specificationProperty.Name + "_When_" + model.Variable.ListInstanceNameReference + "_Already_Exists");
+	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Save_Multiple_" + model.Variable.ListInstanceNameReference + "_Test_Preserves_" + specificationProperty.Name + "_When_Is_Flipped_And_" + model.Variable.ListInstanceNameReference + "_Already_Exists");
 	function.Tag("[TestMethod]");
 	
 	function.Add("if(this." + model.Interface.InstanceName + " == null)");
@@ -791,7 +805,114 @@ IFunction Save_Multiple_Test_Preserves_Property_When_Model_Already_Exist_Functio
 	function.Add();
 	function.Add("//Arrange");
 	function.Add(TemplatesHelper.EnumerableOf(model.Interface.VariableType) + " injected = new List<" + model.Interface.VariableType.Name + ">() { this." + model.Interface.InstanceName + " };");
-	function.Add("this." + model.Interface.InstanceName + "." + specificationProperty.Name + " = this." + model.Interface.InstanceName + "NotFound." + specificationProperty.Name + ";");
+	function.Add("injected." + specificationProperty.Name + " = !this." + model.Interface.InstanceName + "." + specificationProperty.Name + ";");
+	function.Add();
+	function.Add(model.Interface.VariableType.Name + " actual = null;");
+	function.Add(model.Interface.VariableType.Name + " expected = this." + model.Interface.InstanceName + ";");
+	function.Add();
+	
+	if(model.Tier == Tier.Primary)
+		function.Add(model.SearchInterface.VariableType.Name + " search = PrepareSearch(expected);");
+	else
+		function.Add(model.SearchMultipleInterface.VariableType.Name + " search = PrepareSearch(expected);");
+
+	function.Add("if(search == null)");
+	function.Add("\tthrow new AssertInconclusiveException(" + TemplatesHelper.FormatString("You must override the function that prepares a " + model.Variable.VariableType.Name + " Search model for this test to be effective.") + ");");
+	function.Add();
+	
+	if(model.Tier == Tier.Primary)
+		function.Add("this.initial = this.service.FindSingle(this.searchThatReturnsSomething);");
+	else
+		function.Add("this.initial = this.service.Find(this.searchMultipleThatFindsSomething).FirstOrDefault();");
+			
+	function.Add();
+	function.Add("//Act");
+	function.Add("this.service.Save(injected, null);");
+	function.Add();
+	function.Add("//Assert");
+
+	if(model.Tier == Tier.Primary)
+		function.Add("actual = this.service.FindSingle(search);");
+	else
+		function.Add("actual = this.service.Find(search).FirstOrDefault();");
+			
+	function.Add();
+	function.Add("Assert.AreEqual(expected." + specificationProperty.Name + ", actual." + specificationProperty.Name + ");");
+
+	return function;
+}
+
+IFunction Save_Multiple_Test_Preserves_Property_When_Is_Maxed_And_Model_Already_Exist_Function(ISpecificationModel model, ISpecificationProperty specificationProperty)
+{
+	string prefix = "this." + model.Interface.InstanceName + "." + specificationProperty.Name + " = ";
+	string randomValue = GetMaxValue(specificationProperty);
+
+	if(string.IsNullOrWhiteSpace(randomValue))
+	{
+		randomValue = "TODO";
+		prefix = "//" + prefix;
+	}
+
+	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Save_Multiple_" + model.Variable.ListInstanceNameReference + "_Test_Preserves_" + specificationProperty.Name + "_When_Is_Maxed_And_" + model.Variable.ListInstanceNameReference + "_Already_Exists");
+	function.Tag("[TestMethod]");
+	
+	function.Add("if(this." + model.Interface.InstanceName + " == null)");
+	function.Add("\tthrow new AssertInconclusiveException(" + TemplatesHelper.FormatString("You must provide a " + model.Variable.VariableType.Name + " that is already in the repository for this test to be effective.") + ");");
+	function.Add();
+	function.Add("//Arrange");
+	function.Add(TemplatesHelper.EnumerableOf(model.Interface.VariableType) + " injected = new List<" + model.Interface.VariableType.Name + ">() { this." + model.Interface.InstanceName + " };");
+	
+	if(specificationProperty.PropertyType == "string")
+		function.Add(TemplatesHelper.ColumnCounter(prefix + " ", randomValue));
+
+	function.Add(prefix + randomValue + ";");
+	function.Add();
+	function.Add(model.Interface.VariableType.Name + " actual = null;");
+	function.Add(model.Interface.VariableType.Name + " expected = this." + model.Interface.InstanceName + ";");
+	function.Add();
+	
+	if(model.Tier == Tier.Primary)
+		function.Add(model.SearchInterface.VariableType.Name + " search = PrepareSearch(expected);");
+	else
+		function.Add(model.SearchMultipleInterface.VariableType.Name + " search = PrepareSearch(expected);");
+
+	function.Add("if(search == null)");
+	function.Add("\tthrow new AssertInconclusiveException(" + TemplatesHelper.FormatString("You must override the function that prepares a " + model.Variable.VariableType.Name + " Search model for this test to be effective.") + ");");
+	function.Add();
+	
+	if(model.Tier == Tier.Primary)
+		function.Add("this.initial = this.service.FindSingle(this.searchThatReturnsSomething);");
+	else
+		function.Add("this.initial = this.service.Find(this.searchMultipleThatFindsSomething).FirstOrDefault();");
+			
+	function.Add();
+	function.Add("//Act");
+	function.Add("this.service.Save(injected, null);");
+	function.Add();
+	function.Add("//Assert");
+
+	if(model.Tier == Tier.Primary)
+		function.Add("actual = this.service.FindSingle(search);");
+	else
+		function.Add("actual = this.service.Find(search).FirstOrDefault();");
+			
+	function.Add();
+	function.Add("Assert.AreEqual(expected." + specificationProperty.Name + ", actual." + specificationProperty.Name + ");");
+
+	return function;
+}
+
+IFunction Save_Multiple_Test_Preserves_Property_When_Is_Null_And_Model_Already_Exist_Function(ISpecificationModel model, ISpecificationProperty specificationProperty)
+{
+	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Save_Multiple_" + model.Variable.ListInstanceNameReference + "_Test_Preserves_" + specificationProperty.Name + "_When_Is_Null_And_" + model.Variable.ListInstanceNameReference + "_Already_Exists");
+	function.Tag("[TestMethod]");
+	
+	function.Add("if(this." + model.Interface.InstanceName + " == null)");
+	function.Add("\tthrow new AssertInconclusiveException(" + TemplatesHelper.FormatString("You must provide a " + model.Variable.VariableType.Name + " that is already in the repository for this test to be effective.") + ");");
+	function.Add();
+	function.Add("//Arrange");
+	function.Add(TemplatesHelper.EnumerableOf(model.Interface.VariableType) + " injected = new List<" + model.Interface.VariableType.Name + ">() { this." + model.Interface.InstanceName + " };");
+	function.Add("this." + model.Interface.InstanceName + "." + specificationProperty.Name + " = null;");
 	function.Add();
 	function.Add(model.Interface.VariableType.Name + " actual = null;");
 	function.Add(model.Interface.VariableType.Name + " expected = this." + model.Interface.InstanceName + ";");
@@ -976,13 +1097,13 @@ IFunction Save_Test_Preserves_Model_When_It_Is_New_Function(ISpecificationModel 
 		function.Add("{");
 
 		if(model.Tier == Tier.Primary)
-			function.Add("\t" + model.Interface.VariableType.Name + " actual = this.service.FindSingle(search);");
+			function.Add("\t" + model.Interface.VariableType.Name + " actual = this." + model.Interface.InstanceName + "NotFound = this.service.FindSingle(search);");
 		else
-			function.Add("\t" + model.Interface.VariableType.Name + " actual = this.service.Find(search).FirstOrDefault();");
+			function.Add("\t" + model.Interface.VariableType.Name + " actual = this." + model.Interface.InstanceName + "NotFound = this.service.Find(search).FirstOrDefault();");
 			
 		function.Add();
 		function.Add("\tAssert.IsNotNull(actual);");
-		function.Add("\tAssert.IsTrue(expected.Key.Equals(actual.Key));");
+		//function.Add("\tAssert.IsTrue(expected.Key.Equals(actual.Key));");
 	
 		foreach(ISpecificationProperty specificationProperty in model.SpecificationProperties.Values.Where(_property => !_property.IsCalculated))
 		{
@@ -1001,9 +1122,18 @@ IFunction Save_Test_Preserves_Model_When_It_Is_New_Function(ISpecificationModel 
 	return function;
 }
 
-IFunction Save_Test_Preserves_Property_When_Model_Already_Exists_Function(ISpecificationModel model, ISpecificationProperty specificationProperty)
+IFunction Save_Test_Preserves_Property_When_Is_Flipped_And_Model_Already_Exists_Function(ISpecificationModel model, ISpecificationProperty specificationProperty)
 {
-	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Save_" + model.Variable.VariableType.Name + "_Test_Preserves_" + specificationProperty.Name + "_When_" + model.Variable.ListInstanceNameReference + "_Already_Exists");
+	string prefix = "injected." + specificationProperty.Name + " = ";
+	string randomValue = GetMaxValue(specificationProperty);
+
+	if(string.IsNullOrWhiteSpace(randomValue))
+	{
+		randomValue = "TODO";
+		prefix = "//" + prefix;
+	}
+
+	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Save_" + model.Variable.VariableType.Name + "_Test_Preserves_" + specificationProperty.Name + "_When_Is_Flipped_And_" + model.Variable.ListInstanceNameReference + "_Already_Exists");
 	function.Tag("[TestMethod]");
 	
 	function.Add("if(this." + model.Interface.InstanceName + " == null)");
@@ -1011,7 +1141,114 @@ IFunction Save_Test_Preserves_Property_When_Model_Already_Exists_Function(ISpeci
 	function.Add();
 	function.Add("//Arrange");
 	function.Add(model.Interface.VariableType.Name + " injected = this." + model.Interface.InstanceName + ";");
-	function.Add("injected." + specificationProperty.Name + " = this." + model.Interface.InstanceName + "NotFound." + specificationProperty.Name + ";");
+	function.Add("injected." + specificationProperty.Name + " = !this." + model.Interface.InstanceName + ";");
+	function.Add();
+	function.Add(model.Interface.VariableType.Name + " actual = null;");
+	function.Add(model.Interface.VariableType.Name + " expected = injected;");
+	function.Add();
+	
+	if(model.Tier == Tier.Primary)
+		function.Add(model.SearchInterface.VariableType.Name + " search = PrepareSearch(expected);");
+	else
+		function.Add(model.SearchMultipleInterface.VariableType.Name + " search = PrepareSearch(expected);");
+
+	function.Add("if(search == null)");
+	function.Add("\tthrow new AssertInconclusiveException(" + TemplatesHelper.FormatString("You must override the function that prepares a " + model.Variable.VariableType.Name + " Search model for this test to be effective.") + ");");
+	function.Add();
+	
+	if(model.Tier == Tier.Primary)
+		function.Add("this.initial = this.service.FindSingle(this.searchThatReturnsSomething);");
+	else
+		function.Add("this.initial = this.service.Find(this.searchMultipleThatFindsSomething).FirstOrDefault();");
+			
+	function.Add();
+	function.Add("//Act");
+	function.Add("this.service.Save(injected, null);");
+	function.Add();
+	function.Add("//Assert");
+
+	if(model.Tier == Tier.Primary)
+		function.Add("actual = this.service.FindSingle(search);");
+	else
+		function.Add("actual = this.service.Find(search).FirstOrDefault();");
+			
+	function.Add();
+	function.Add("Assert.AreEqual(expected." + specificationProperty.Name + ", actual." + specificationProperty.Name + ");");
+
+	return function;
+}
+
+IFunction Save_Test_Preserves_Property_When_Is_Maxed_And_Model_Already_Exists_Function(ISpecificationModel model, ISpecificationProperty specificationProperty)
+{
+	string prefix = "injected." + specificationProperty.Name + " = ";
+	string randomValue = GetMaxValue(specificationProperty);
+
+	if(string.IsNullOrWhiteSpace(randomValue))
+	{
+		randomValue = "TODO";
+		prefix = "//" + prefix;
+	}
+
+	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Save_" + model.Variable.VariableType.Name + "_Test_Preserves_" + specificationProperty.Name + "_When_Is_Maxed_And_" + model.Variable.ListInstanceNameReference + "_Already_Exists");
+	function.Tag("[TestMethod]");
+	
+	function.Add("if(this." + model.Interface.InstanceName + " == null)");
+	function.Add("\tthrow new AssertInconclusiveException(" + TemplatesHelper.FormatString("You must provide a " + model.Variable.VariableType.Name + " that is already in the repository for this test to be effective.") + ");");
+	function.Add();
+	function.Add("//Arrange");
+	function.Add(model.Interface.VariableType.Name + " injected = this." + model.Interface.InstanceName + ";");
+
+	if(specificationProperty.PropertyType == "string")
+		function.Add(TemplatesHelper.ColumnCounter(prefix + " ", randomValue));
+
+	function.Add(prefix + randomValue + ";");
+	function.Add();
+	function.Add(model.Interface.VariableType.Name + " actual = null;");
+	function.Add(model.Interface.VariableType.Name + " expected = injected;");
+	function.Add();
+	
+	if(model.Tier == Tier.Primary)
+		function.Add(model.SearchInterface.VariableType.Name + " search = PrepareSearch(expected);");
+	else
+		function.Add(model.SearchMultipleInterface.VariableType.Name + " search = PrepareSearch(expected);");
+
+	function.Add("if(search == null)");
+	function.Add("\tthrow new AssertInconclusiveException(" + TemplatesHelper.FormatString("You must override the function that prepares a " + model.Variable.VariableType.Name + " Search model for this test to be effective.") + ");");
+	function.Add();
+	
+	if(model.Tier == Tier.Primary)
+		function.Add("this.initial = this.service.FindSingle(this.searchThatReturnsSomething);");
+	else
+		function.Add("this.initial = this.service.Find(this.searchMultipleThatFindsSomething).FirstOrDefault();");
+			
+	function.Add();
+	function.Add("//Act");
+	function.Add("this.service.Save(injected, null);");
+	function.Add();
+	function.Add("//Assert");
+
+	if(model.Tier == Tier.Primary)
+		function.Add("actual = this.service.FindSingle(search);");
+	else
+		function.Add("actual = this.service.Find(search).FirstOrDefault();");
+			
+	function.Add();
+	function.Add("Assert.AreEqual(expected." + specificationProperty.Name + ", actual." + specificationProperty.Name + ");");
+
+	return function;
+}
+
+IFunction Save_Test_Preserves_Property_When_Is_Null_And_Model_Already_Exists_Function(ISpecificationModel model, ISpecificationProperty specificationProperty)
+{
+	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Save_" + model.Variable.VariableType.Name + "_Test_Preserves_" + specificationProperty.Name + "_When_Is_Null_And_" + model.Variable.ListInstanceNameReference + "_Already_Exists");
+	function.Tag("[TestMethod]");
+	
+	function.Add("if(this." + model.Interface.InstanceName + " == null)");
+	function.Add("\tthrow new AssertInconclusiveException(" + TemplatesHelper.FormatString("You must provide a " + model.Variable.VariableType.Name + " that is already in the repository for this test to be effective.") + ");");
+	function.Add();
+	function.Add("//Arrange");
+	function.Add(model.Interface.VariableType.Name + " injected = this." + model.Interface.InstanceName + ";");
+	function.Add("injected." + specificationProperty.Name + " = null;");
 	function.Add();
 	function.Add(model.Interface.VariableType.Name + " actual = null;");
 	function.Add(model.Interface.VariableType.Name + " expected = injected;");
@@ -1169,7 +1406,7 @@ IFunction TestInitializeFunction(ISpecification specification, ISpecificationMod
 	}
 
 	function.Add();
-	function.Add("this." + model.Interface.InstanceName + " = this.service.Find(this.searchMultipleThatFindsSomething, null).FirstOrDefault();");
+	function.Add("this." + model.Interface.InstanceName + " = this.service.Find(this.searchMultipleThatFindsSomething).FirstOrDefault();");
 	function.Add();
 	
 	IList<IVariable> keyParameters = new List<IVariable>();

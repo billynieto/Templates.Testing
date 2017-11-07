@@ -4,8 +4,8 @@
 <#@ import namespace="System.Diagnostics" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.IO" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.dll" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.Framework.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.Framework.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.Framework.dll" #>
 <#@ import namespace="Templates" #>
@@ -250,17 +250,17 @@ IClass GenerateCoreRepositoryUnitTestClass(ISpecification specification, INamesp
 				
 				if(!(relationship is IBiologicalParent) || (relationship is IBiologicalParent && relatedModel.HasRepositoryAndService))
 				{
-					_class.Add(Select_Test_Calls_Generate_On_ModelFactory_For_Related_Model_Function(model, specificationProperty.Relationship));
+					//_class.Add(Select_Test_Calls_Generate_On_ModelFactory_For_Related_Model_Function(model, specificationProperty.Relationship));
 
-					if(relatedModel.Key != null)
-						_class.Add(Select_Test_Calls_Generate_On_ModelFactory_For_Related_Models_Key_Function(model, specificationProperty.Relationship));
+					//if(relatedModel.Key != null)
+						//_class.Add(Select_Test_Calls_Generate_On_ModelFactory_For_Related_Models_Key_Function(model, specificationProperty.Relationship));
 
-					_class.Add(Select_Test_Sets_Related_Models_Properties_Function(model, specificationProperty.Relationship));
+					//_class.Add(Select_Test_Sets_Related_Models_Properties_Function(model, specificationProperty.Relationship));
 				}
 			}
 			else
 			{
-				_class.Add(Select_Test_Sets_Property_Function(model, specificationProperty));
+				//_class.Add(Select_Test_Sets_Property_Function(model, specificationProperty));
 			}
 		}
 	}
@@ -1060,7 +1060,7 @@ void Recursively_Assert_Related_Models_Properties_Are_Set(IFunction function, st
 	
 	foreach(ISpecificationProperty specificationProperty in relatedModel.SpecificationProperties.Values)
 	{
-		if(specificationProperty.Relationship != null && specificationProperty.Relationship is IParent && !(specificationProperty.Relationship is IAdoptingParent))
+		if(specificationProperty.Relationship != null && specificationProperty.Relationship is IBiologicalParent)
 		{
 			if(!specificationProperty.IsList)
 				Recursively_Assert_Related_Models_Properties_Are_Set(

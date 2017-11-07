@@ -35,11 +35,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Repository, Version=2.2.6423.21466, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Repository.2.2.6423.21466\lib\net45\Repository.dll</HintPath>
+    <Reference Include="Repository, Version=2.2.6467.21126, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Repository.2.2.6467.21126\lib\net45\Repository.dll</HintPath>
     </Reference>
-    <Reference Include="Repository.Framework, Version=2.2.6423.21466, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Repository.2.2.6423.21466\lib\net45\Repository.Framework.dll</HintPath>
+    <Reference Include="Repository.Framework, Version=2.2.6467.21126, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Repository.2.2.6467.21126\lib\net45\Repository.Framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -49,11 +49,11 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="Templates, Version=2.1.6325.18422, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Templates.2.1.6325.18422\lib\net45\Templates.dll</HintPath>
+    <Reference Include="Templates, Version=2.1.6446.18343, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Templates.2.1.6446.18343\lib\net45\Templates.dll</HintPath>
     </Reference>
-    <Reference Include="Templates.Framework, Version=2.0.6325.18420, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Templates.2.1.6325.18422\lib\net45\Templates.Framework.dll</HintPath>
+    <Reference Include="Templates.Framework, Version=2.0.6446.18343, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Templates.2.1.6446.18343\lib\net45\Templates.Framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

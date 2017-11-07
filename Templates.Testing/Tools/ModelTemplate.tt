@@ -4,8 +4,8 @@
 <#@ import namespace="System.Diagnostics" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.IO" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.dll" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.Framework.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.Framework.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.Framework.dll" #>
 <#@ import namespace="Templates" #>
@@ -157,7 +157,9 @@ IClass GenerateModelFactoryClass(ISpecification specification, INamespace _names
 	foreach(ISpecificationModel model in specification.Models.Values)
 	{
 		_class.Add(GenerateModelFunction(model));
-		_class.Add(GenerateKeyFunction(model));
+
+		if(model.Key != null)
+			_class.Add(GenerateKeyFunction(model));
 
 		if(model.HasRepositoryAndService)
 		{
@@ -313,7 +315,10 @@ IFunction GenerateKeyFunction(ISpecificationModel model)
 
 IFunction GenerateModelFunction(ISpecificationModel model)
 {
-	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(model.KeyInterface.VariableType.Name, model.KeyInterface.InstanceName) };
+	IList<IVariable> parameters = new List<IVariable>();
+
+	if(model.Key != null)
+		parameters.Add(model.KeyInterface);
 
 	IFunction function = new TemplateFunction(Privacy.Public, model.Interface.VariableType.Name, "Generate" + model.Variable.VariableType.Name, parameters);
 	function.Add("return new " + model.Variable.VariableType.Name + "(" + TemplatesHelper.ListOutVariables(parameters) + ");");

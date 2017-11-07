@@ -4,8 +4,8 @@
 <#@ import namespace="System.Diagnostics" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.IO" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.dll" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.Framework.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.Framework.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.Framework.dll" #>
 <#@ import namespace="Templates" #>
@@ -173,7 +173,7 @@ IClass GenerateCoreServiceTestClass(ISpecification specification, INamespace _na
 		_class.Add(Delete_Test_Throws_Error_When_Key_Is_Null_Function(model));
 		_class.Add(Delete_Test_Throws_Error_When_Key_Is_Not_Found_In_Repository_Function(model));
 	
-		foreach(IRelationship relationship in model.RelationshipsToNotDelete)
+		foreach(IRelationship relationship in GetDistinct(model.RelationshipsToNotDelete))
 		{
 			_class.Add(Delete_Multiple_Test_Does_Not_Call_Delete_On_Related_Models_Service_Function(model, relationship));
 			_class.Add(Delete_Test_Does_Not_Call_Delete_On_Related_Models_Service_Function(model, relationship));
@@ -199,7 +199,7 @@ IClass GenerateCoreServiceTestClass(ISpecification specification, INamespace _na
 	_class.Add(Find_Test_Calls_Select_On_Repository_Function(model));
 	_class.Add(Find_Test_Calls_Validate_On_Search_Function(model));
 	
-	foreach(IRelationship relationship in model.RelationshipsToNotFind)
+	foreach(IRelationship relationship in GetDistinct(model.RelationshipsToNotFind))
 	{
 		_class.Add(Find_Test_Does_Not_Call_Find_On_Related_Models_Service_Function(model, relationship));
 		_class.Add(Find_Test_Does_Not_Call_FindSingle_On_Related_Models_Service_Function(model, relationship));
@@ -214,10 +214,10 @@ IClass GenerateCoreServiceTestClass(ISpecification specification, INamespace _na
 		_class.Add(FindSingle_Test_Returns_Model_When_Is_Found_In_Repository_Function(model));
 		_class.Add(FindSingle_Test_Returns_Null_When_Model_Is_Not_Found_In_Repository_Function(model));
 	 
-		foreach(IRelationship relationship in model.RelationshipsToFind)
+		foreach(IRelationship relationship in GetDistinct(model.RelationshipsToFind))
 			_class.Add(FindSingle_Test_Calls_Find_On_Related_Models_Service_Function(model, relationship));
 		
-		foreach(IRelationship relationship in model.RelationshipsToNotFindOnFindSingle)
+		foreach(IRelationship relationship in GetDistinct(model.RelationshipsToNotFindOnFindSingle))
 		{
 			_class.Add(FindSingle_Test_Does_Not_Call_Find_On_Related_Models_Service_Function(model, relationship));
 			_class.Add(FindSingle_Test_Does_Not_Call_FindSingle_On_Related_Models_Service_Function(model, relationship));
@@ -264,7 +264,7 @@ IClass GenerateCoreServiceTestClass(ISpecification specification, INamespace _na
 
 		_class.Add(Save_Test_Throws_Error_When_Model_Is_Null_Function(model));
 	
-		foreach(IRelationship relationship in model.MonitoredRelationships.Where(_relationship => !_relationship.ReferencingProperty.ReadOnly))
+		foreach(IRelationship relationship in GetDistinct(model.MonitoredRelationships.Where(_relationship => !_relationship.ReferencingProperty.ReadOnly).ToList()))
 		{
 			_class.Add(Save_Multiple_Test_Does_Not_Call_Delete_On_Related_Models_Service_Function(model, relationship));
 			_class.Add(Save_Multiple_Test_Calls_Exists_On_Related_Models_Service_Function(model, relationship));
@@ -279,7 +279,7 @@ IClass GenerateCoreServiceTestClass(ISpecification specification, INamespace _na
 			_class.Add(Save_Test_Does_Not_Call_Save_On_Related_Models_Service_Function(model, relationship));
 		}
 
-		foreach(IRelationship relationship in model.RelationshipsToManage.Where(_relationship => !_relationship.ReferencingProperty.ReadOnly))
+		foreach(IRelationship relationship in GetDistinct(model.RelationshipsToManage.Where(_relationship => !_relationship.ReferencingProperty.ReadOnly).ToList()))
 		{
 			_class.Add(Save_Multiple_Test_Calls_Delete_On_Related_Models_Service_For_Old_Models_Function(model, relationship));
 			_class.Add(Save_Multiple_Test_Does_Not_Call_Exists_On_Related_Models_Service_Function(model, relationship));
@@ -292,7 +292,7 @@ IClass GenerateCoreServiceTestClass(ISpecification specification, INamespace _na
 			_class.Add(Save_Test_Calls_Save_On_Related_Models_Service_For_New_Models_Function(model, relationship));
 		}
 	
-		foreach(IRelationship relationship in model.RelationshipsToNotManage.Where(_relationship => !_relationship.ReferencingProperty.ReadOnly))
+		foreach(IRelationship relationship in GetDistinct(model.RelationshipsToNotManage.Where(_relationship => !_relationship.ReferencingProperty.ReadOnly).ToList()))
 		{
 			_class.Add(Save_Multiple_Test_Does_Not_Call_Delete_On_Related_Models_Service_Function(model, relationship));
 			_class.Add(Save_Multiple_Test_Does_Not_Call_Exists_On_Related_Models_Service_Function(model, relationship));
@@ -474,8 +474,10 @@ IFunction Delete_Multiple_Test_Calls_Delete_On_Related_Models_Service_Function(I
 	function.Add("//Arrange");
 	function.Add("IList<" + model.KeyInterface.VariableType.Name + "> injected = this.keys.Select(_key => _key.Object).ToList();");
 	function.Add();
-	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), )).Returns(true);");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Delete(injected, this.transaction.Object);");
@@ -496,7 +498,9 @@ IFunction Delete_Multiple_Test_Calls_Delete_On_Repository_Function(ISpecificatio
 	function.Add("IList<" + model.KeyInterface.VariableType.Name + "> injected = this.keys.Select(_key => _key.Object).ToList();");
 	function.Add();
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Delete(injected, this.transaction.Object);");
@@ -517,14 +521,22 @@ IFunction Delete_Multiple_Test_Calls_Exists_On_Repository_Function(ISpecificatio
 	function.Add("IList<" + model.KeyInterface.VariableType.Name + "> injected = this.keys.Select(_key => _key.Object).ToList();");
 	function.Add();
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Delete(injected, this.transaction.Object);");
 	function.Add();
 	function.Add("//Assert");
-	function.Add("try { this.repository.Verify(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">()), Times.Exactly(" + model.Interface.ListInstanceName + ".Count)); }");
-	function.Add("catch { this.repository.Verify(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>()), Times.Exactly(1)); }");
+	function.Add("try { this.repository.Verify(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())); }");
+	function.Add("catch {");
+	function.Add("\ttry { this.repository.Verify(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())); }");
+	function.Add("\tcatch {");
+	function.Add("\t\ttry { this.repository.Verify(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())); }");
+	function.Add("\t\tcatch { this.repository.Verify(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())); }");
+	function.Add("\t}");
+	function.Add("}");
 
 	return function;
 }
@@ -540,7 +552,9 @@ IFunction Delete_Multiple_Test_Does_Not_Call_Delete_On_Related_Models_Service_Fu
 	function.Add("IList<" + model.KeyInterface.VariableType.Name + "> injected = this.keys.Select(_key => _key.Object).ToList();");
 	function.Add();
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Delete(injected, this.transaction.Object);");
@@ -596,7 +610,9 @@ IFunction Delete_Multiple_Test_Throws_Error_When_Key_Is_Not_Found_In_Repository_
 	function.Add("IList<" + model.KeyInterface.VariableType.Name + "> injected = this.keys.Select(_key => _key.Object).ToList();");
 	function.Add();
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(false);");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(false);");
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Delete(injected, this.transaction.Object);");
@@ -615,7 +631,9 @@ IFunction Delete_Test_Calls_Delete_On_Repository_Function(ISpecificationModel mo
 	function.Add(model.KeyInterface.VariableType.Name + " injected = " + model.Interface.InstanceName + ".Object.Key;");
 	function.Add();
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Delete(injected, this.transaction.Object);");
@@ -636,14 +654,22 @@ IFunction Delete_Test_Calls_Exists_On_Repository_Function(ISpecificationModel mo
 	function.Add(model.KeyInterface.VariableType.Name + " injected = " + model.Interface.InstanceName + ".Object.Key;");
 	function.Add();
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Delete(injected, this.transaction.Object);");
 	function.Add();
 	function.Add("//Assert");
 	function.Add("try { this.repository.Verify(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())); }");
-	function.Add("catch { this.repository.Verify(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())); }");
+	function.Add("catch {");
+	function.Add("\ttry { this.repository.Verify(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())); }");
+	function.Add("\tcatch {");
+	function.Add("\t\ttry { this.repository.Verify(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())); }");
+	function.Add("\t\tcatch { this.repository.Verify(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())); }");
+	function.Add("\t}");
+	function.Add("}");
 
 	return function;
 }
@@ -661,7 +687,9 @@ IFunction Delete_Test_Calls_Delete_On_Related_Models_Service_Function(ISpecifica
 	function.Add(model.KeyInterface.VariableType.Name + " injected = " + model.Interface.InstanceName + ".Object.Key;");
 	function.Add();
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Delete(injected, this.transaction.Object);");
@@ -711,7 +739,9 @@ IFunction Delete_Test_Does_Not_Call_Delete_On_Related_Models_Service_Function(IS
 	function.Add(model.KeyInterface.VariableType.Name + " injected = " + model.Interface.InstanceName + ".Object.Key;");
 	function.Add();
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(this.keys.Select(_key => _key.Object).ToList());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Delete(injected, this.transaction.Object);");
@@ -767,7 +797,9 @@ IFunction Delete_Test_Throws_Error_When_Key_Is_Not_Found_In_Repository_Function(
 	function.Add(model.KeyInterface.VariableType.Name + " injected = " + model.Interface.InstanceName + ".Object.Key;");
 	function.Add();
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(false);");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(false);");
 	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
+	function.Add("this.repository.Setup(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Delete(injected, this.transaction.Object);");
@@ -1258,7 +1290,9 @@ IFunction Save_Multiple_Test_Calls_Delete_On_Related_Models_Service_For_Old_Mode
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1284,14 +1318,22 @@ IFunction Save_Multiple_Test_Calls_Exists_On_Related_Models_Service_Function(ISp
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
 	function.Add();
 	function.Add("//Assert");
-	function.Add("try { this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Exists(It.IsAny<" + relatedModel.KeyInterface.VariableType.Name + ">())); }");
-	function.Add("catch { this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Exists(It.IsAny<IEnumerable<" + relatedModel.KeyInterface.VariableType.Name + ">>())); }");
+	function.Add("try { this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Exists(It.IsAny<IEnumerable<" + relatedModel.KeyInterface.VariableType.Name + ">>())); }");
+	function.Add("catch {");
+	function.Add("\ttry { this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Exists(It.IsAny<IEnumerable<" + relatedModel.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())); }");
+	function.Add("\tcatch {");
+	function.Add("\t\ttry { this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Exists(It.IsAny<" + relatedModel.KeyInterface.VariableType.Name + ">())); }");
+	function.Add("\t\tcatch { this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Exists(It.IsAny<" + relatedModel.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())); }");
+	function.Add("\t}");
+	function.Add("}");
 	
 	return function;
 }
@@ -1311,12 +1353,16 @@ IFunction Save_Multiple_Test_Calls_Exists_On_Repository_Function(ISpecificationM
 	if(model.CanInsert)
 	{
 		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(false);");
-		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return new List<" + model.KeyInterface.VariableType.Name + ">(); });");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(false);");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
 	}
 	else
 	{
 		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	}
 
 	function.Add();
@@ -1324,8 +1370,14 @@ IFunction Save_Multiple_Test_Calls_Exists_On_Repository_Function(ISpecificationM
 	function.Add("this.service.Save(injected, this.transaction.Object);");
 	function.Add();
 	function.Add("//Assert");
-	function.Add("try { this.repository.Verify(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">()), Times.Exactly(" + model.Interface.ListInstanceName + ".Count)); }");
-	function.Add("catch { this.repository.Verify(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>()), Times.Exactly(1)); }");
+	function.Add("try { this.repository.Verify(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())); }");
+	function.Add("catch {");
+	function.Add("\ttry { this.repository.Verify(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())); }");
+	function.Add("\tcatch {");
+	function.Add("\t\ttry { this.repository.Verify(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())); }");
+	function.Add("\t\tcatch { this.repository.Verify(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())); }");
+	function.Add("\t}");
+	function.Add("}");
 
 	return function;
 }
@@ -1345,7 +1397,9 @@ IFunction Save_Multiple_Test_Calls_Find_On_Related_Models_Service_Function(ISpec
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1369,13 +1423,15 @@ IFunction Save_Multiple_Test_Calls_Insert_On_Repository_For_New_Models_Function(
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(false);");
-	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return new List<" + model.KeyInterface.VariableType.Name + ">(); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(false);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
 	function.Add();
 	function.Add("//Assert");
-	function.Add("this.repository.Verify(r => r.Insert(It.IsAny<" + TemplatesHelper.EnumerableOf(model.Interface.VariableType) + ">(), It.IsAny<IDbTransaction>()), Times.Exactly(1));");
+	function.Add("this.repository.Verify(r => r.Insert(It.IsAny<" + TemplatesHelper.EnumerableOf(model.Interface.VariableType) + ">(), It.IsAny<IDbTransaction>()));");
 
 	return function;
 }
@@ -1398,13 +1454,15 @@ IFunction Save_Multiple_Test_Calls_Save_On_Related_Models_Service_For_New_Models
 	function.Add("this." + relatedModel.ServiceInterface.InstanceName + ".Setup(s => s.Exists(It.IsAny<IEnumerable<" + relatedModel.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(this." + relatedModel.Interface.ListInstanceName + ".Select(m => m.Object.Key).ToList());");
 	function.Add();
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
 	function.Add();
 	function.Add("//Assert");
-	function.Add("this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Save(It.IsAny<" + TemplatesHelper.EnumerableOf(relatedModel.Interface.VariableType) + ">(), It.IsAny<IDbTransaction>()), Times.Exactly(1));");
+	function.Add("this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Save(It.IsAny<" + TemplatesHelper.EnumerableOf(relatedModel.Interface.VariableType) + ">(), It.IsAny<IDbTransaction>()));");
 
 	return function;
 }
@@ -1422,13 +1480,15 @@ IFunction Save_Multiple_Test_Calls_Update_On_Repository_For_Existing_Models_Func
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
 	function.Add();
 	function.Add("//Assert");
-	function.Add("this.repository.Verify(r => r.Update(It.IsAny<" + TemplatesHelper.EnumerableOf(model.Interface.VariableType) + ">(), It.IsAny<IDbTransaction>()), Times.Exactly(1));");
+	function.Add("this.repository.Verify(r => r.Update(It.IsAny<" + TemplatesHelper.EnumerableOf(model.Interface.VariableType) + ">(), It.IsAny<IDbTransaction>()));");
 
 	return function;
 }
@@ -1447,9 +1507,11 @@ IFunction Save_Multiple_Test_Does_Not_Call_Delete_On_Related_Models_Service_Func
 	
 	foreach(string line in SetupAffectedModelExistsFunctions(model, relatedModel))
 		function.Add(line);
-
+		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1477,7 +1539,9 @@ IFunction Save_Multiple_Test_Does_Not_Call_Exists_On_Related_Models_Service_Func
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1505,7 +1569,9 @@ IFunction Save_Multiple_Test_Does_Not_Call_Find_On_Related_Models_Service_Functi
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1532,7 +1598,9 @@ IFunction Save_Multiple_Test_Does_Not_Call_FindSingle_On_Related_Models_Service_
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1559,7 +1627,9 @@ IFunction Save_Multiple_Test_Does_Not_Call_Save_On_Related_Models_Service_Functi
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1602,7 +1672,9 @@ IFunction Save_Multiple_Test_Throws_Error_For_New_Models_Function(ISpecification
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(false);");
-	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return new List<" + model.KeyInterface.VariableType.Name + ">(); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(false);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1626,7 +1698,9 @@ IFunction Save_Multiple_Test_Throws_Error_For_Existing_Models_Function(ISpecific
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1669,11 +1743,13 @@ IFunction Save_Test_Calls_Delete_On_Related_Models_Service_For_Old_Models_Functi
 	foreach(string line in SetupAffectedModelExistsFunctions(model, relatedModel))
 		function.Add(line);
 
-	function.Add("this." + relatedModel.ServiceInterface.InstanceName + ".Setup(s => s.Exists(It.IsAny<" + relatedModel.KeyInterface.VariableType.Name + ">())).Returns(true);");
-	function.Add("this." + relatedModel.ServiceInterface.InstanceName + ".Setup(s => s.Exists(It.IsAny<IEnumerable<" + relatedModel.KeyInterface.VariableType.Name + ">>())).Returns(this." + relatedModel.Interface.ListInstanceName + ".Select(_" + relatedModel.Interface.InstanceName + " => _" + relatedModel.Interface.InstanceName + ".Object.Key));");
-	function.Add();
+	//function.Add("this." + relatedModel.ServiceInterface.InstanceName + ".Setup(s => s.Exists(It.IsAny<" + relatedModel.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	//function.Add("this." + relatedModel.ServiceInterface.InstanceName + ".Setup(s => s.Exists(It.IsAny<IEnumerable<" + relatedModel.KeyInterface.VariableType.Name + ">>())).Returns(this." + relatedModel.Interface.ListInstanceName + ".Select(_" + relatedModel.Interface.InstanceName + " => _" + relatedModel.Interface.InstanceName + ".Object.Key));");
+	//function.Add();
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1702,12 +1778,16 @@ IFunction Save_Test_Calls_Exists_On_Related_Models_Service_Function(ISpecificati
 	if(model.CanInsert)
 	{
 		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(false);");
-		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return new List<" + model.KeyInterface.VariableType.Name + ">(); });");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(false);");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
 	}
 	else
 	{
 		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	}
 
 	function.Add();
@@ -1716,7 +1796,13 @@ IFunction Save_Test_Calls_Exists_On_Related_Models_Service_Function(ISpecificati
 	function.Add();
 	function.Add("//Assert");
 	function.Add("try { this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Exists(It.IsAny<IEnumerable<" + relatedModel.KeyInterface.VariableType.Name + ">>())); }");
-	function.Add("catch { this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Exists(It.IsAny<" + relatedModel.KeyInterface.VariableType.Name + ">())); }");
+	function.Add("catch {");
+	function.Add("\ttry { this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Exists(It.IsAny<IEnumerable<" + relatedModel.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())); }");
+	function.Add("\tcatch {");
+	function.Add("\t\ttry { this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Exists(It.IsAny<" + relatedModel.KeyInterface.VariableType.Name + ">())); }");
+	function.Add("\t\tcatch { this." + relatedModel.ServiceInterface.InstanceName + ".Verify(s => s.Exists(It.IsAny<" + relatedModel.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())); }");
+	function.Add("\t}");
+	function.Add("}");
 
 	return function;
 }
@@ -1737,12 +1823,16 @@ IFunction Save_Test_Calls_Exists_On_Repository_Function(ISpecificationModel mode
 	if(model.CanInsert)
 	{
 		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(false);");
-		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return new List<" + model.KeyInterface.VariableType.Name + ">(); });");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(false);");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
 	}
 	else
 	{
 		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+		function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	}
 
 	function.Add();
@@ -1750,8 +1840,14 @@ IFunction Save_Test_Calls_Exists_On_Repository_Function(ISpecificationModel mode
 	function.Add("this.service.Save(injected, this.transaction.Object);");
 	function.Add();
 	function.Add("//Assert");
-	function.Add("try { this.repository.Verify(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">()), Times.Exactly(1)); }");
-	function.Add("catch { this.repository.Verify(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>()), Times.Exactly(1)); }");
+	function.Add("try { this.repository.Verify(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())); }");
+	function.Add("catch {");
+	function.Add("\ttry { this.repository.Verify(r => r.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())); }");
+	function.Add("\tcatch {");
+	function.Add("\t\ttry { this.repository.Verify(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())); }");
+	function.Add("\t\tcatch { this.repository.Verify(r => r.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())); }");
+	function.Add("\t}");
+	function.Add("}");
 
 	return function;
 }
@@ -1772,7 +1868,9 @@ IFunction Save_Test_Calls_Find_On_Related_Models_Service_Function(ISpecification
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1795,16 +1893,18 @@ IFunction Save_Test_Calls_Insert_On_Repository_For_New_Models_Function(ISpecific
 	
 	foreach(string line in SetupAffectedModelExistsFunctions(model))
 		function.Add(line);
-
+		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(false);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(false);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
 	function.Add();
 	function.Add("//Assert");
-	function.Add("try { this.repository.Verify(r => r.Insert(It.IsAny<" + model.Interface.VariableType.Name + ">(), It.IsAny<IDbTransaction>()), Times.Exactly(1)); }");
-	function.Add("catch { this.repository.Verify(r => r.Insert(It.IsAny<" + TemplatesHelper.EnumerableOf(model.Interface.VariableType) + ">(), It.IsAny<IDbTransaction>()), Times.Exactly(1)); }");
+	function.Add("try { this.repository.Verify(r => r.Insert(It.IsAny<" + model.Interface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())); }");
+	function.Add("catch { this.repository.Verify(r => r.Insert(It.IsAny<" + TemplatesHelper.EnumerableOf(model.Interface.VariableType) + ">(), It.IsAny<IDbTransaction>())); }");
 
 	return function;
 }
@@ -1825,7 +1925,9 @@ IFunction Save_Test_Calls_Save_On_Related_Models_Service_For_New_Models_Function
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1848,16 +1950,18 @@ IFunction Save_Test_Calls_Update_On_Repository_For_Existing_Models_Function(ISpe
 	
 	foreach(string line in SetupAffectedModelExistsFunctions(model))
 		function.Add(line);
-
+		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
-	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(this." + model.Interface.ListInstanceName + ".Select(_" + model.Interface.InstanceName + " => _" + model.Interface.InstanceName + ".Object.Key));");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
 	function.Add();
 	function.Add("//Assert");
-	function.Add("try { this.repository.Verify(r => r.Update(It.IsAny<" + model.Interface.VariableType.Name + ">(), It.IsAny<IDbTransaction>()), Times.Exactly(1)); }");
-	function.Add("catch { this.repository.Verify(r => r.Update(It.IsAny<" + TemplatesHelper.EnumerableOf(model.Interface.VariableType) + ">(), It.IsAny<IDbTransaction>()), Times.Exactly(1)); }");
+	function.Add("try { this.repository.Verify(r => r.Update(It.IsAny<" + model.Interface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())); }");
+	function.Add("catch { this.repository.Verify(r => r.Update(It.IsAny<" + TemplatesHelper.EnumerableOf(model.Interface.VariableType) + ">(), It.IsAny<IDbTransaction>())); }");
 
 	return function;
 }
@@ -1876,9 +1980,11 @@ IFunction Save_Test_Does_Not_Call_Delete_On_Related_Models_Service_Function(ISpe
 	
 	foreach(string line in SetupAffectedModelExistsFunctions(model, relatedModel))
 		function.Add(line);
-
+		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1906,7 +2012,9 @@ IFunction Save_Test_Does_Not_Call_Exists_On_Related_Models_Service_Function(ISpe
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1934,7 +2042,9 @@ IFunction Save_Test_Does_Not_Call_Find_On_Related_Models_Service_Function(ISpeci
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1961,7 +2071,9 @@ IFunction Save_Test_Does_Not_Call_FindSingle_On_Related_Models_Service_Function(
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -1988,7 +2100,9 @@ IFunction Save_Test_Does_Not_Call_Save_On_Related_Models_Service_Function(ISpeci
 		function.Add(line);
 		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -2031,7 +2145,9 @@ IFunction Save_Test_Throws_Error_For_New_Models_Function(ISpecificationModel mod
 		function.Add(line);
 
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(false);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(false);");
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(new List<" + model.KeyInterface.VariableType.Name + ">());");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -2054,9 +2170,11 @@ IFunction Save_Test_Throws_Error_For_Existing_Models_Function(ISpecificationMode
 	
 	foreach(string line in SetupAffectedModelExistsFunctions(model))
 		function.Add(line);
-
+		
 	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">())).Returns(true);");
-	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(this." + model.Interface.ListInstanceName + ".Select(_" + model.Interface.InstanceName + " => _" + model.Interface.InstanceName + ".Object.Key));");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<" + model.KeyInterface.VariableType.Name + ">(), It.IsAny<IDbTransaction>())).Returns(true);");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
+	function.Add("this.repository.Setup(s => s.Exists(It.IsAny<IEnumerable<" + model.KeyInterface.VariableType.Name + ">>(), It.IsAny<IDbTransaction>())).Returns(() => { return this.keys.Select(_key => _key.Object); });");
 	function.Add();
 	function.Add("//Act");
 	function.Add("this.service.Save(injected, this.transaction.Object);");
@@ -2106,7 +2224,7 @@ IFunction TestInitializeFunction(ISpecificationModel model)
 	string seperator = ", ";
 	string temp = "this.service = new " + model.ServiceVariable.VariableType.Name + "(this.repository.Object";
 	if(model.DirectlyDepandantRelationships.Count > 0)
-		temp += ", " + TemplatesHelper.ListOutVariables("this.", model.DirectlyDepandantRelationships.Select(_relationship => _relationship.RelatedModel.ServiceInterface).ToList(), ".Object", seperator, PrintVariableType.InstanceName);
+		temp += ", " + TemplatesHelper.ListOutVariables("this.", GetDistinct(model.DirectlyDepandantRelationships.ToList()).Select(_relationship => _relationship.RelatedModel.ServiceInterface).ToList(), ".Object", seperator, PrintVariableType.InstanceName);
 	temp += ", this.modelFactory.Object);";
 
 	function.Add(temp);
@@ -2123,57 +2241,47 @@ IEnumerable<string> SetupAffectedModelExistsFunctions(ISpecificationModel model,
 {
 	List<string> lines = new List<string>();
 
-	IList<IRelationship> toCheckForExistence = new List<IRelationship>();
-	foreach(IAdmire admire in model.Admires)
-		toCheckForExistence.Add(admire);
-	foreach(IBiologicalChild biologicalChild in model.BiologicalChildren)
-		toCheckForExistence.Add(biologicalChild);
-	foreach(IBiologicalParent biologicalParent in model.BiologicalParents)
-		toCheckForExistence.Add(biologicalParent);
-		
-	foreach(IRelationship relation in toCheckForExistence.OrderBy(_relation => _relation.RelatedModel.Variable.VariableType.Name))
+	foreach(IRelationship relation in model.DirectlyDepandantRelationships
+		.GroupBy(_relationship => _relationship.RelatedModel.Variable.VariableType.Name)
+		.Select(_group => _group.First())
+		.OrderBy(_relationship => _relationship.RelatedModel.Variable.VariableType.Name))
 	{
 		if(relatedModel == null || relatedModel.Interface.VariableType.Name != relation.Model.Interface.VariableType.Name)
 		{
-			StringBuilder line = new StringBuilder();
-			StringBuilder idSelectionQuery = new StringBuilder();
+			StringBuilder partMultipleIdsSelectionQuery = new StringBuilder();
+			StringBuilder partSingleIdSelectionQuery = new StringBuilder("return true;");
+			StringBuilder partKey = new StringBuilder().Append("It.IsAny<").Append(relation.RelatedModel.KeyInterface.VariableType.Name).Append(">()");
+			StringBuilder partKeys = new StringBuilder().Append("It.IsAny<IEnumerable<").Append(relation.RelatedModel.KeyInterface.VariableType.Name).Append(">>()");
+			StringBuilder partReturnsPrefix = new StringBuilder().Append(".Returns(() => { ");
+			StringBuilder partReturnsSuffix = new StringBuilder().Append(" });");
+			StringBuilder partSetupExistsPrefix = new StringBuilder().Append(".Setup(s => s.Exists(");
+			StringBuilder partSetupExistsSuffix = new StringBuilder().Append("))");
+			StringBuilder partTargetObject = new StringBuilder().Append("this.").Append(relation.RelatedModel.ServiceInterface.InstanceName);
+			string partTransaction = ", It.IsAny<IDbTransaction>()";
 
-			if(relation.ReferencingProperty.IsList)
+			if(relation.ReferencingProperty != null && relation.ReferencingProperty.IsList)
 			{
 				if(relation.RelatedModel != null)
-					idSelectionQuery.Append("(from _").Append(relation.RelatedModel.Interface.InstanceName).Append(" in this.").Append(relation.RelatedModel.Interface.ListInstanceName).Append(" select _").Append(relation.RelatedModel.Interface.InstanceName).Append(".Object.Key).ToList()");
+					partMultipleIdsSelectionQuery.Append("return (from _").Append(relation.RelatedModel.Interface.InstanceName).Append(" in this.").Append(relation.RelatedModel.Interface.ListInstanceName).Append(" select _").Append(relation.RelatedModel.Interface.InstanceName).Append(".Object.Key).ToList();");
 				else
-					idSelectionQuery.Append("(from _").Append(model.Interface.InstanceName).Append(" in this.").Append(relation.RelatedModel.Interface.ListInstanceName).Append(" select _").Append(model.Interface.InstanceName).Append(".Object.").Append(relation.ReferencingProperty.Name).Append(".Key).ToList()");
-			
-				line.Append("this.")
-					.Append(relation.RelatedModel.ServiceInterface.InstanceName)
-					.Append(".Setup(s => s.Exists(It.IsAny<IEnumerable<")
-					.Append(relation.RelatedModel.KeyInterface.VariableType.Name)
-					.Append(">>())).Returns(")
-					.Append(idSelectionQuery.ToString())
-					.Append(");");
+					partMultipleIdsSelectionQuery.Append("return (from _").Append(model.Interface.InstanceName).Append(" in this.").Append(relation.RelatedModel.Interface.ListInstanceName).Append(" select _").Append(model.Interface.InstanceName).Append(".Object.").Append(relation.ReferencingProperty.Name).Append(".Key).ToList();");
 			}
 			else
 			{
-				idSelectionQuery
+				partMultipleIdsSelectionQuery
 					.Append("return this.")
 					.Append(relation.RelatedModel.KeyInterface.ListInstanceName)
 					.Append(".Select(_key => _key.Object);");
-			
-				line.Append("this.")
-					.Append(relation.RelatedModel.ServiceInterface.InstanceName)
-					.Append(".Setup(s => s.Exists(It.IsAny<IEnumerable<")
-					.Append(relation.RelatedModel.KeyInterface.VariableType.Name)
-					.Append(">>())).Returns(() => { ")
-					.Append(idSelectionQuery.ToString())
-					.Append(" });");
 			}
 
-			lines.Add(line.ToString());
+			lines.Add(new StringBuilder().Append(partTargetObject).Append(partSetupExistsPrefix).Append(partKey).Append(partSetupExistsSuffix).Append(partReturnsPrefix).Append(partSingleIdSelectionQuery).Append(partReturnsSuffix).ToString());
+			lines.Add(new StringBuilder().Append(partTargetObject).Append(partSetupExistsPrefix).Append(partKey).Append(partTransaction).Append(partSetupExistsSuffix).Append(partReturnsPrefix).Append(partSingleIdSelectionQuery).Append(partReturnsSuffix).ToString());
+			lines.Add(new StringBuilder().Append(partTargetObject).Append(partSetupExistsPrefix).Append(partKeys).Append(partSetupExistsSuffix).Append(partReturnsPrefix).Append(partMultipleIdsSelectionQuery).Append(partReturnsSuffix).ToString());
+			lines.Add(new StringBuilder().Append(partTargetObject).Append(partSetupExistsPrefix).Append(partKeys).Append(partTransaction).Append(partSetupExistsSuffix).Append(partReturnsPrefix).Append(partMultipleIdsSelectionQuery).Append(partReturnsSuffix).ToString());
 		}
 	}
 
-	if(toCheckForExistence.Count > 0)
+	if(model.DirectlyDepandantRelationships.Count > 0)
 		lines.Add(string.Empty);
 
 	return lines;

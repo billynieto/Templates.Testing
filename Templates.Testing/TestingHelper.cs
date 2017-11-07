@@ -346,9 +346,9 @@ namespace Templates.Testing
                 }
             }
 
-            if (specification.Enumerations.Values.Any(_enumeration => _enumeration.Name == specificationProperty.PropertyType))
+            if (specification.Enumerations.Values.Any(_enumeration => _enumeration.Name == specificationProperty.PropertyType.Replace("?", "")))
             {
-                ISpecificationEnumeration specificationEnumeration = specification.Enumerations.Values.First(_enumeration => _enumeration.Name == specificationProperty.PropertyType);
+                ISpecificationEnumeration specificationEnumeration = specification.Enumerations.Values.First(_enumeration => _enumeration.Name == specificationProperty.PropertyType.Replace("?", ""));
 
                 IEnumeration enumeration = new TemplateEnumeration(specification.Settings.FrameworkNamespace, specificationEnumeration.Name);
                 foreach (ISpecificationEnumerationItem item in specificationEnumeration.Items)
@@ -358,19 +358,19 @@ namespace Templates.Testing
             }
 
             if (specificationProperty.PropertyType == "bool" || specificationProperty.PropertyType == "bool?")
-                return TemplatesHelper.FormatBool(true);
+                return TemplatesHelper.FormatBool(specificationProperty.Default != null ? (bool)specificationProperty.Default : TemplatesHelper.RandomBool());
             if (specificationProperty.PropertyType == "DateTime" || specificationProperty.PropertyType == "DateTime?")
-                return TemplatesHelper.FormatDateTime(specificationProperty.IsDateOnly ? DateTime.Now.Date : DateTime.Now);
+                return TemplatesHelper.FormatDateTime(specificationProperty.Default != null ? (DateTime)specificationProperty.Default : specificationProperty.IsDateOnly ? DateTime.Now.Date : DateTime.Now);
             if (specificationProperty.PropertyType == "double" || specificationProperty.PropertyType == "double?")
-                return TemplatesHelper.FormatDouble(TestingHelper.RandomDouble(specificationProperty));
+                return TemplatesHelper.FormatDouble(specificationProperty.Default != null ? (double)specificationProperty.Default : TestingHelper.RandomDouble(specificationProperty));
             if (specificationProperty.PropertyType == "Guid" || specificationProperty.PropertyType == "Guid?")
                 return "Guid.NewGuid()";
             if (specificationProperty.PropertyType == "int" || specificationProperty.PropertyType == "int?")
-                return TemplatesHelper.FormatInt(TestingHelper.RandomInt(specificationProperty));
+                return TemplatesHelper.FormatInt(specificationProperty.Default != null ? (int)specificationProperty.Default : TestingHelper.RandomInt(specificationProperty));
             if (specificationProperty.PropertyType == "string")
-                return TemplatesHelper.FormatString(TestingHelper.RandomString(specificationProperty));
+                return TemplatesHelper.FormatString(specificationProperty.Default != null ? (string)specificationProperty.Default : TestingHelper.RandomString(specificationProperty));
             if (specificationProperty.PropertyType == "TimeSpan" || specificationProperty.PropertyType == "TimeSpan?")
-                return TemplatesHelper.FormatTimeSpan(TemplatesHelper.RandomTimeSpan());
+                return TemplatesHelper.FormatTimeSpan(specificationProperty.Default != null ? (TimeSpan)specificationProperty.Default : TemplatesHelper.RandomTimeSpan());
 
             return TemplatesHelper.FormatString("Unsupported type: " + specificationProperty.PropertyType);
         }

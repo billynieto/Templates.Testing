@@ -4,8 +4,8 @@
 <#@ import namespace="System.Diagnostics" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.IO" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.dll" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.Framework.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.Framework.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.Framework.dll" #>
 <#@ import namespace="Templates" #>
@@ -125,7 +125,11 @@ IInterface GenerateModelDesignerInterface(ISpecification specification, INamespa
 {
 	IInterface _interface = new TemplateInterface(_namespace, model.Interface.VariableType.Name);
 	_interface.IsPartial = true;
-	_interface.WillImplement(new TemplateGenericInterface(_namespace, specification.ModelInterface.Name, new List<string>(){ model.KeyInterface.VariableType.Name }));
+
+	if(model.Key != null)
+		_interface.WillImplement(new TemplateGenericInterface(_namespace, specification.ModelInterface.Name, new List<string>(){ model.KeyInterface.VariableType.Name }));
+	else
+		_interface.WillImplement(new TemplateInterface(_namespace, specification.ModelInterface.Name));
 		
 	foreach(ISpecificationProperty specificationProperty in model.SpecificationProperties.Values.Concat(additionalProperties))
 	{
@@ -148,7 +152,9 @@ IInterface GenerateModelFactoryInterface(ISpecification specification, INamespac
 	foreach(ISpecificationModel model in specification.Models.Values)
 	{
 		_interface.Add(GenerateModelFunction(model));
-		_interface.Add(GenerateModelKeyFunction(model));
+
+		if(model.Key != null)
+			_interface.Add(GenerateModelKeyFunction(model));
 	
 		if(model.HasRepositoryAndService)
 		{
@@ -178,8 +184,11 @@ IInterface GenerateSearchMultipleInterface(ISpecification specification, INamesp
 #>
 <#+
 IFunction GenerateModelFunction(ISpecificationModel model)
-{
-	IList<IVariable> parameters = new List<IVariable>(){ model.KeyInterface };
+{	
+	IList<IVariable> parameters = new List<IVariable>();
+
+	if(model.Key != null)
+		parameters.Add(model.KeyInterface);
 
 	return new TemplateFunction(Privacy.Public, model.Interface.VariableType, "Generate" + model.Variable.VariableType.Name, parameters);
 }

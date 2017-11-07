@@ -4,8 +4,8 @@
 <#@ import namespace="System.Diagnostics" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.IO" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.dll" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6423.24029\lib\net45\Templates.Framework.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.6446.18343\lib\net45\Templates.Framework.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.dll" #>
 <#@ Assembly name="$(SolutionDir)packages\Templates.Testing.X.X.XXXX.XXXXX\lib\net45\Templates.Testing.Framework.dll" #>
 <#@ import namespace="Templates" #>
@@ -120,12 +120,16 @@ IClass GenerateRepositoryBaseClass(ISpecification specification, INamespace _nam
 	_class.Add(BaseDeleteFunction(specification));
 	_class.Add(BaseDeleteMultipleFunction(specification));
 	_class.Add(BaseExistsFunction(specification));
+	_class.Add(BaseExistsFunctionWithTransaction(specification));
 	_class.Add(BaseExistsMultipleFunction(specification));
+	_class.Add(BaseExistsMultipleFunctionWithTransaction(specification));
 	_class.Add(BaseInsertFunction(specification));
 	_class.Add(BaseInsertMultipleFunction(specification));
 	_class.Add(BaseOpenFunction());
 	_class.Add(BaseSelectFunction(specification));
+	_class.Add(BaseSelectFunctionWithTransaction(specification));
 	_class.Add(BaseSelectSingleFunction(specification));
+	_class.Add(BaseSelectSingleFunctionWithTransaction(specification));
 	_class.Add(BaseStartTransactionFunction(specification));
 	_class.Add(BaseUpdateFunction(specification));
 	_class.Add(BaseUpdateMultipleFunction(specification));
@@ -206,18 +210,41 @@ IFunction BaseDeleteMultipleFunction(ISpecification specification)
 
 IFunction BaseExistsFunction(ISpecification specification)
 {
+	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(tKey, "key") };
+
+	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Boolean, "Exists", parameters);
+	function.Add("if(key == null)");
+	function.Add("\tthrow new ArgumentNullException(" + TemplatesHelper.FormatString("Key") + ");");
+	function.Add();
+	function.Add("return Exists(new List<" + tKey.Name + ">(){ key }).FirstOrDefault() != null;");
+
+	return function;
+}
+
+IFunction BaseExistsFunctionWithTransaction(ISpecification specification)
+{
 	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(tKey, "key"), specification.TransactionVariable };
 
 	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Boolean, "Exists", parameters);
 	function.Add("if(key == null)");
 	function.Add("\tthrow new ArgumentNullException(" + TemplatesHelper.FormatString("Key") + ");");
 	function.Add();
-	function.Add("return Exists(new List<" + tKey.Name + ">(){ key }, " + specification.TransactionVariable.InstanceName + ").FirstOrDefault() != null;");
+	function.Add("return Exists(new List<" + tKey.Name + ">(){ key }, transaction).FirstOrDefault() != null;");
 
 	return function;
 }
 
 IFunction BaseExistsMultipleFunction(ISpecification specification)
+{
+	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable("IEnumerable<" + tKey + ">", "keys") };
+
+	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, "IEnumerable<" + tKey + ">", "Exists", parameters);
+	function.Add("throw new NotImplementedException(" + TemplatesHelper.FormatString("Exists (multiple) must be overridden!") + ");");
+
+	return function;
+}
+
+IFunction BaseExistsMultipleFunctionWithTransaction(ISpecification specification)
 {
 	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable("IEnumerable<" + tKey + ">", "keys"), specification.TransactionVariable };
 
@@ -260,6 +287,16 @@ IFunction BaseOpenFunction()
 
 IFunction BaseSelectFunction(ISpecification specification)
 {
+	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(tMultipleSearch, "search") };
+
+	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, "IEnumerable<" + tModel.Name + ">", "Select", parameters);
+	function.Add("throw new NotImplementedException(" + TemplatesHelper.FormatString("Select (multiple) must be overridden!") + ");");
+
+	return function;
+}
+
+IFunction BaseSelectFunctionWithTransaction(ISpecification specification)
+{
 	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(tMultipleSearch, "search"), specification.TransactionVariable };
 
 	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, "IEnumerable<" + tModel.Name + ">", "Select", parameters);
@@ -269,6 +306,16 @@ IFunction BaseSelectFunction(ISpecification specification)
 }
 
 IFunction BaseSelectSingleFunction(ISpecification specification)
+{
+	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(tSingleSearch, "search") };
+
+	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, tModel, "Select", parameters);
+	function.Add("throw new NotImplementedException(" + TemplatesHelper.FormatString("Select must be overridden!") + ");");
+
+	return function;
+}
+
+IFunction BaseSelectSingleFunctionWithTransaction(ISpecification specification)
 {
 	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(tSingleSearch, "search"), specification.TransactionVariable };
 
@@ -291,10 +338,7 @@ IFunction BaseUpdateFunction(ISpecification specification)
 	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(tModel.Name, "model"), specification.TransactionVariable };
 	
 	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overridable, TemplateVariableType.Void, "Update", parameters);
-	function.Add("if(model == null)");
-	function.Add("\tthrow new ArgumentNullException(" + TemplatesHelper.FormatString("Model") + ");");
-	function.Add();
-	function.Add("Update(new List<" + tModel.Name + ">(){ model }, " + specification.TransactionVariable.InstanceName + ");");
+	function.Add("throw new NotImplementedException(" + TemplatesHelper.FormatString("Update must be overridden!") + ");");
 
 	return function;
 }
@@ -338,7 +382,7 @@ IFunction DeleteMultipleErrorsOutFunction(ISpecification specification, ISpecifi
 
 IFunction ExistsMultipleFunction(ISpecification specification, ISpecificationModel model)
 {
-	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable("IEnumerable<" + model.KeyInterface.VariableType.Name + ">", "keys"), specification.TransactionVariable };
+	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable("IEnumerable<" + model.KeyInterface.VariableType.Name + ">", "keys") };
 
 	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overriding, "IEnumerable<" + model.KeyInterface.VariableType.Name + ">", "Exists", parameters);
 	function.Add("if(keys == null)");
@@ -397,7 +441,7 @@ IConstructor PrimaryConstructor(ISpecification specification)
 
 IFunction SelectFunction(ISpecification specification, ISpecificationModel model)
 {
-	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(model.SearchMultipleInterface.VariableType.Name, "search"), specification.TransactionVariable };
+	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(model.SearchMultipleInterface.VariableType.Name, "search") };
 
 	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overriding, TemplatesHelper.EnumerableOf(model.Interface.VariableType), "Select", parameters);
 	function.Add("//TODO: Search for all items in the repository and filter out based on the provided Search object.");
@@ -409,7 +453,7 @@ IFunction SelectFunction(ISpecification specification, ISpecificationModel model
 
 IFunction SelectSingleFunction(ISpecification specification, ISpecificationModel model)
 {
-	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(model.SearchInterface.VariableType.Name, "search"), specification.TransactionVariable };
+	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(model.SearchInterface.VariableType.Name, "search") };
 
 	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overriding, model.Interface.VariableType.Name, "Select", parameters);
 	function.Add("//TODO: Find a specific model.  There should only be 1 item found and returned.");
@@ -421,7 +465,7 @@ IFunction SelectSingleFunction(ISpecification specification, ISpecificationModel
 
 IFunction SelectSingleErrorsOutFunction(ISpecification specification, ISpecificationModel model)
 {
-	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(model.SearchInterface.VariableType.Name, "search"), specification.TransactionVariable };
+	IList<IVariable> parameters = new List<IVariable>() { new TemplateVariable(model.SearchInterface.VariableType.Name, "search") };
 
 	IFunction function = new TemplateFunction(Privacy.Public, Overridability.Overriding, model.Interface.VariableType.Name, "Select", parameters);
 	function.Add("throw new NotSupportedException();");

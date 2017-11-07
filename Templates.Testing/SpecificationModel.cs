@@ -196,6 +196,7 @@ namespace Templates.Testing
                     {
                         matchedRelationships = Relationships
                             .Where(_relationship => _relationship.RelatedModel.HasRepositoryAndService
+                                                    && !(_relationship is ICustodiedChild)
                                                     && !(_relationship is IEnemy)
                                                     && !(_relationship is IRecursive)
                                                     && !(_relationship is ISibling)
@@ -206,7 +207,8 @@ namespace Templates.Testing
                     {
                         matchedRelationships = Relationships
                             .Where(_relationship => _relationship.RelatedModel.HasRepositoryAndService
-                                                    && _relationship is IGrandparent)
+                                                    && (_relationship is IGodchild
+                                                        || _relationship is IGrandparent))
                             .OrderBy(_relationship => _relationship.RelatedModel.Variable.Reference);
                     }
 
@@ -295,6 +297,7 @@ namespace Templates.Testing
                                 || relationship is IGodfather
                                 || relationship is IGrandchild
                                 || relationship is IGrandparent
+                                || relationship is IRecursive
                                 || relationship is ISingleParent
                                 || relationship is IUnfitParent)
                             this.relationshipsRequiredForUnitTesting.Add(relationship);
@@ -541,6 +544,9 @@ namespace Templates.Testing
 
         public void SetupRelationship(ISpecificationModel relatedModel)
         {
+            if (this.relationships.Any(_relationship => _relationship.RelatedModel.Variable.VariableType.Name == relatedModel.Variable.VariableType.Name))
+                return;
+
             IEnumerable<ISpecificationProperty> relatedSpecificationProperties = SpecificationProperties.Values.Concat(Key.SpecificationProperties).Where(_specificationProperty => _specificationProperty.PropertyType == relatedModel.Interface.VariableType.Name || _specificationProperty.PropertyType == relatedModel.Variable.VariableType.Name);
 
             foreach (ISpecificationProperty specificationProperty in relatedSpecificationProperties)
@@ -554,26 +560,18 @@ namespace Templates.Testing
                     this.recursive.Add(recursive);
                     this.relationships.Add(recursive);
                 }
-                else if (Tier == Tier.Tertiary || relatedModel.Tier == Tier.Tertiary)
+                else if (relatedModel.Tier == Tier.Tertiary)
                 {
                     //ISpecificationProperty otherReferencingProperty = relatedModel.SpecificationProperties.Values.Where(_property => (_property.PropertyType == Variable.VariableType.Name || _property.PropertyType == Interface.VariableType.Name)).FirstOrDefault();
 
                     //if (otherReferencingProperty == null && relatedModel.Key != null)
                     //    otherReferencingProperty = relatedModel.Key.SpecificationProperties.Where(_property => (_property.PropertyType == Variable.VariableType.Name || _property.PropertyType == Interface.VariableType.Name)).FirstOrDefault();
 
-                    if (Tier == Tier.Tertiary && relatedModel.Tier == Tier.Tertiary)
+                    if (Tier == Tier.Tertiary)
                     {
                         //relatedModel is my sibling
                     }
-                    else if (Tier == Tier.Tertiary)
-                    {
-                        IGrandparent grandparent = this.testingFactory.GenerateGrandparent(specificationProperty, relatedModel);
-
-                        this.grandparents.Add(grandparent);
-                        this.parents.Add(grandparent);
-                        this.relationships.Add(grandparent);
-                    }
-                    else // relatedModel.Tier equals Tier.Teriary
+                    else
                     {
                         IGrandchild grandchild = this.testingFactory.GenerateGrandchild(specificationProperty, relatedModel);
 
