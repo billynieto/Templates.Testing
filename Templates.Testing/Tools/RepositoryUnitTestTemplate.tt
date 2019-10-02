@@ -4,10 +4,10 @@
 <#@ import namespace="System.Diagnostics" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.IO" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.0\lib\Templates.dll" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.2.1.0\lib\Templates.Framework.dll" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.Testing.2.3.0\lib\Templates.Testing.dll" #>
-<#@ Assembly name="$(SolutionDir)packages\Templates.Testing.2.3.0\lib\Templates.Testing.Framework.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\T5.Templates.2.1.0\lib\Templates.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\T5.Templates.2.1.0\lib\Templates.Framework.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\T5.Templates.Testing.2.3.0\lib\Templates.Testing.dll" #>
+<#@ Assembly name="$(SolutionDir)packages\T5.Templates.Testing.2.3.0\lib\Templates.Testing.Framework.dll" #>
 <#@ import namespace="Templates" #>
 <#@ import namespace="Templates.Framework" #>
 <#@ import namespace="Templates.Testing" #>
@@ -1692,7 +1692,7 @@ IFunction Update_Multiple_Test_Does_Not_Get_Property_For_Model_Function(ISpecifi
 	function.Add();
 	function.Add("//Act");
 	function.Add("foreach(" + TestingHelper.MockOf(model) + " " + model.Interface.InstanceName + " in expected)");
-	function.Add("\t" + model.Interface.InstanceName + ".ResetCalls();");
+	function.Add("\t" + model.Interface.InstanceName + ".Invocations.Clear();");
 	function.Add();
 	function.Add("this.repository.Update(expected.Select(e => e.Object).ToList(), this.transaction.Object);");
 	function.Add();
@@ -1724,7 +1724,7 @@ IFunction Update_Multiple_Test_Does_Not_Get_Key_For_Related_Model_Function(ISpec
 	function.Add();
 	function.Add("//Act");
 	function.Add("foreach(" + TestingHelper.MockOf(model) + " " + model.Interface.InstanceName + " in expected)");
-	function.Add("\t" + model.Interface.InstanceName + ".ResetCalls();");
+	function.Add("\t" + model.Interface.InstanceName + ".Invocations.Clear();");
 	function.Add();
 	function.Add("this.repository.Update(injected, this.transaction.Object);");
 	function.Add();
@@ -1757,7 +1757,7 @@ IFunction Update_Multiple_Test_Gets_Key_Function(ISpecificationModel model)
 	function.Add();
 	function.Add("//Act");
 	function.Add("foreach(" + TestingHelper.MockOf(model) + " " + model.Interface.InstanceName + " in expected)");
-	function.Add("\t" + model.Interface.InstanceName + ".ResetCalls();");
+	function.Add("\t" + model.Interface.InstanceName + ".Invocations.Clear();");
 	function.Add();
 	function.Add("this.repository.Update(injected, this.transaction.Object);");
 	function.Add();
@@ -1780,7 +1780,7 @@ IFunction Update_Multiple_Test_Gets_Property_For_Model_Function(ISpecificationMo
 	function.Add();
 	function.Add("//Act");
 	function.Add("foreach(" + TestingHelper.MockOf(model) + " " + model.Interface.InstanceName + " in expected)");
-	function.Add("\t" + model.Interface.InstanceName + ".ResetCalls();");
+	function.Add("\t" + model.Interface.InstanceName + ".Invocations.Clear();");
 	function.Add();
 	function.Add("this.repository.Update(expected.Select(e => e.Object).ToList(), this.transaction.Object);");
 	function.Add();
@@ -1806,7 +1806,7 @@ IFunction Update_Multiple_Test_Gets_Key_For_Related_Model_Function(ISpecificatio
 	function.Add();
 	function.Add("//Act");
 	function.Add("foreach(" + TestingHelper.MockOf(relatedModel) + " " + relatedModel.Interface.InstanceName + " in expected)");
-	function.Add("\t" + relatedModel.Interface.InstanceName + ".ResetCalls();");
+	function.Add("\t" + relatedModel.Interface.InstanceName + ".Invocations.Clear();");
 	function.Add();
 	function.Add("this.repository.Update(injected, this.transaction.Object);");
 	function.Add();
@@ -1862,7 +1862,7 @@ IFunction Update_Test_Does_Not_Get_Models_Property_Function(ISpecificationModel 
 	function.Add("AddRow(expected.Object);");
 	function.Add();
 	function.Add("//Act");
-	function.Add("expected.ResetCalls();");
+	function.Add("expected.Invocations.Clear();");
 	function.Add();
 	function.Add("this.repository.Update(expected.Object, this.transaction.Object);");
 	function.Add();
@@ -1890,7 +1890,7 @@ IFunction Update_Test_Does_Not_Get_Related_Models_Key_Function(ISpecificationMod
 	function.Add("AddRow(this." + model.Interface.InstanceName + ".Object);");
 	function.Add();
 	function.Add("//Act");
-	function.Add("expected.ResetCalls();");
+	function.Add("expected.Invocations.Clear();");
 	function.Add();
 	function.Add("this.repository.Update(" + model.Interface.InstanceName + ".Object, this.transaction.Object);");
 	function.Add();
@@ -1920,7 +1920,7 @@ IFunction Update_Test_Gets_Models_Key_Function(ISpecificationModel model)
 	function.Add("AddRow(expected.Object);");
 	function.Add();
 	function.Add("//Act");
-	function.Add("expected.ResetCalls();");
+	function.Add("expected.Invocations.Clear();");
 	function.Add();
 	function.Add("this.repository.Update(expected.Object, this.transaction.Object);");
 	function.Add();
@@ -1941,7 +1941,7 @@ IFunction Update_Test_Gets_Models_Property_Function(ISpecificationModel model, I
 	function.Add("AddRow(expected.Object);");
 	function.Add();
 	function.Add("//Act");
-	function.Add("expected.ResetCalls();");
+	function.Add("expected.Invocations.Clear();");
 	function.Add();
 	function.Add("this.repository.Update(expected.Object, this.transaction.Object);");
 	function.Add();
@@ -1964,7 +1964,7 @@ IFunction Update_Test_Gets_Related_Models_Key_Function(ISpecificationModel model
 	function.Add("AddRow(this." + model.Interface.InstanceName + ".Object);");
 	function.Add();
 	function.Add("//Act");
-	function.Add("expected.ResetCalls();");
+	function.Add("expected.Invocations.Clear();");
 	function.Add();
 	function.Add("this.repository.Update(this." + model.Interface.InstanceName + ".Object, this.transaction.Object);");
 	function.Add();
